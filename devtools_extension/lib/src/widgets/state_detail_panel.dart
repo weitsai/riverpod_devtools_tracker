@@ -1,0 +1,543 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/provider_state_info.dart';
+
+class StateDetailPanel extends StatelessWidget {
+  final ProviderStateInfo stateInfo;
+
+  const StateDetailPanel({super.key, required this.stateInfo});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 20),
+          _buildTriggerLocationSection(),
+          const SizedBox(height: 20),
+          _buildValueComparison(),
+          const SizedBox(height: 20),
+          _buildStackTraceSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.2),
+            const Color(0xFF8B5CF6).withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF30363D)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.data_object,
+              color: Color(0xFF6366F1),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stateInfo.providerName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _buildTag(stateInfo.providerType, const Color(0xFF58A6FF)),
+                    const SizedBox(width: 8),
+                    _buildTag(
+                      stateInfo.changeType.toUpperCase(),
+                      _getChangeTypeColor(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            _formatTimestamp(stateInfo.timestamp),
+            style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTriggerLocationSection() {
+    final locationString = stateInfo.locationString;
+    final hasExplicitLocation =
+        stateInfo.location != null || stateInfo.locationFile != null;
+    final hasCallChain = stateInfo.callChain.isNotEmpty;
+
+    // 如果沒有明確的 location（只有從 stackTrace 推導的），顯示完整的 call chain
+    if (!hasExplicitLocation) {
+      if (!hasCallChain) {
+        return const SizedBox.shrink();
+      }
+      // 顯示完整 call chain
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF238636)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.layers, color: Color(0xFF3FB950), size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Call Chain',
+                  style: TextStyle(
+                    color: Color(0xFF3FB950),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${stateInfo.callChain.length} items',
+                  style: const TextStyle(
+                    color: Color(0xFF8B949E),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: _buildCallChainList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 有明確的 location 時顯示 Change Source
+    final triggerLocation = stateInfo.triggerLocation;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF238636)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Change Source',
+                style: TextStyle(
+                  color: Color(0xFF3FB950),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1117),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    locationString ??
+                        '${triggerLocation!.file}:${triggerLocation.line}',
+                    style: const TextStyle(
+                      color: Color(0xFF58A6FF),
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.copy,
+                    color: Color(0xFF8B949E),
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    final text =
+                        locationString ??
+                        '${triggerLocation?.file}:${triggerLocation?.line}';
+                    Clipboard.setData(ClipboardData(text: text));
+                  },
+                  tooltip: 'Copy location',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValueComparison() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF30363D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.compare_arrows, color: Color(0xFF8B949E), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'State Change',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildValueBox(
+                  'Before',
+                  stateInfo.formattedPreviousValue,
+                  const Color(0xFFF85149),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(Icons.arrow_forward, color: Color(0xFF8B949E)),
+              ),
+              Expanded(
+                child: _buildValueBox(
+                  'After',
+                  stateInfo.formattedCurrentValue,
+                  const Color(0xFF3FB950),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValueBox(String label, String value, Color labelColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: labelColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1117),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: labelColor.withOpacity(0.3)),
+          ),
+          child: SelectableText(
+            value,
+            style: const TextStyle(
+              color: Color(0xFFC9D1D9),
+              fontSize: 12,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStackTraceSection() {
+    final hasCallChain = stateInfo.callChain.isNotEmpty;
+    final hasStackTrace = stateInfo.stackTrace.isNotEmpty;
+    final hasExplicitLocation =
+        stateInfo.location != null || stateInfo.locationFile != null;
+
+    // 如果沒有明確的 location，call chain 已經在上面顯示了，就不用再顯示
+    if (!hasExplicitLocation && hasCallChain) {
+      return const SizedBox.shrink();
+    }
+
+    if (!hasCallChain && !hasStackTrace) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF30363D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.layers, color: Color(0xFF8B949E), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                hasCallChain ? 'Call Chain' : 'Stack Trace',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${hasCallChain ? stateInfo.callChain.length : stateInfo.stackTrace.length} items',
+                style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1117),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child:
+                hasCallChain ? _buildCallChainList() : _buildStackTraceList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCallChainList() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: stateInfo.callChain.length,
+      separatorBuilder:
+          (_, __) => const Divider(height: 1, color: Color(0xFF21262D)),
+      itemBuilder: (context, index) {
+        final entry = stateInfo.callChain[index];
+        final isFirst = index == 0;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: isFirst ? const Color(0xFF238636).withOpacity(0.1) : null,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 24,
+                child: Text(
+                  isFirst ? '→' : '  ',
+                  style: TextStyle(
+                    color:
+                        isFirst
+                            ? const Color(0xFF3FB950)
+                            : const Color(0xFF484F58),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  entry.file,
+                  style: TextStyle(
+                    color:
+                        isFirst
+                            ? const Color(0xFF58A6FF)
+                            : const Color(0xFF8B949E),
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              Text(
+                ':${entry.line}',
+                style: TextStyle(
+                  color:
+                      isFirst
+                          ? const Color(0xFFFFA657)
+                          : const Color(0xFF484F58),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStackTraceList() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: stateInfo.stackTrace.length,
+      separatorBuilder:
+          (_, __) => const Divider(height: 1, color: Color(0xFF21262D)),
+      itemBuilder: (context, index) {
+        final entry = stateInfo.stackTrace[index];
+        final isUserCode = !entry.isFramework && !entry.isRiverpodInternal;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: isUserCode ? const Color(0xFF238636).withOpacity(0.1) : null,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 24,
+                child: Text(
+                  '#$index',
+                  style: TextStyle(
+                    color:
+                        isUserCode
+                            ? const Color(0xFF3FB950)
+                            : const Color(0xFF484F58),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.shortFileName,
+                      style: TextStyle(
+                        color:
+                            isUserCode
+                                ? const Color(0xFF58A6FF)
+                                : const Color(0xFF8B949E),
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    if (entry.function != null)
+                      Text(
+                        entry.function!,
+                        style: TextStyle(
+                          color:
+                              isUserCode
+                                  ? const Color(0xFFD2A8FF)
+                                  : const Color(0xFF6E7681),
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (entry.line != null)
+                Text(
+                  ':${entry.line}',
+                  style: TextStyle(
+                    color:
+                        isUserCode
+                            ? const Color(0xFFFFA657)
+                            : const Color(0xFF484F58),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getChangeTypeColor() {
+    switch (stateInfo.changeType) {
+      case 'add':
+        return const Color(0xFF3FB950);
+      case 'update':
+        return const Color(0xFFF0883E);
+      case 'dispose':
+        return const Color(0xFFF85149);
+      default:
+        return const Color(0xFF8B949E);
+    }
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    return '${timestamp.hour.toString().padLeft(2, '0')}:'
+        '${timestamp.minute.toString().padLeft(2, '0')}:'
+        '${timestamp.second.toString().padLeft(2, '0')}.'
+        '${timestamp.millisecond.toString().padLeft(3, '0')}';
+  }
+}

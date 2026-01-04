@@ -1,0 +1,7 @@
+# Build configuration for riverpod_generator
+targets:
+  $default:
+    builders:
+      riverpod_generator:
+        options:
+          # Generate Riverpod providers
