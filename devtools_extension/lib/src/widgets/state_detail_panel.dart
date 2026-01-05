@@ -2,10 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/provider_state_info.dart';
 
-class StateDetailPanel extends StatelessWidget {
+class StateDetailPanel extends StatefulWidget {
   final ProviderStateInfo stateInfo;
 
   const StateDetailPanel({super.key, required this.stateInfo});
+
+  @override
+  State<StateDetailPanel> createState() => _StateDetailPanelState();
+}
+
+class _StateDetailPanelState extends State<StateDetailPanel> {
+  bool _isBeforeExpanded = false;
+  bool _isAfterExpanded = false;
+
+  ProviderStateInfo get stateInfo => widget.stateInfo;
+
+  // 預設收起時最多顯示的字元數
+  static const int _collapsedMaxLength = 200;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +280,9 @@ class StateDetailPanel extends StatelessWidget {
                   'Before',
                   stateInfo.formattedPreviousValue,
                   const Color(0xFFF85149),
+                  isExpanded: _isBeforeExpanded,
+                  onToggle: () =>
+                      setState(() => _isBeforeExpanded = !_isBeforeExpanded),
                 ),
               ),
               const Padding(
@@ -278,6 +294,9 @@ class StateDetailPanel extends StatelessWidget {
                   'After',
                   stateInfo.formattedCurrentValue,
                   const Color(0xFF3FB950),
+                  isExpanded: _isAfterExpanded,
+                  onToggle: () =>
+                      setState(() => _isAfterExpanded = !_isAfterExpanded),
                 ),
               ),
             ],
@@ -287,17 +306,70 @@ class StateDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildValueBox(String label, String value, Color labelColor) {
+  Widget _buildValueBox(
+    String label,
+    String value,
+    Color labelColor, {
+    required bool isExpanded,
+    required VoidCallback onToggle,
+  }) {
+    final needsExpand = value.length > _collapsedMaxLength;
+    final displayValue = !needsExpand || isExpanded
+        ? value
+        : '${value.substring(0, _collapsedMaxLength)}...';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: labelColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: labelColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (needsExpand) ...[
+              const Spacer(),
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onToggle,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF58A6FF).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isExpanded ? '收起' : '展開',
+                          style: const TextStyle(
+                            color: Color(0xFF58A6FF),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          isExpanded ? Icons.unfold_less : Icons.unfold_more,
+                          size: 14,
+                          color: const Color(0xFF58A6FF),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -306,15 +378,47 @@ class StateDetailPanel extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFF0D1117),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: labelColor.withOpacity(0.3)),
+            border: Border.all(color: labelColor.withValues(alpha: 0.3)),
           ),
-          child: SelectableText(
-            value,
-            style: const TextStyle(
-              color: Color(0xFFC9D1D9),
-              fontSize: 12,
-              fontFamily: 'monospace',
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayValue,
+                style: const TextStyle(
+                  color: Color(0xFFC9D1D9),
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              if (needsExpand && !isExpanded) ...[
+                const SizedBox(height: 8),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onToggle,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF58A6FF).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '點擊展開完整內容...',
+                        style: TextStyle(
+                          color: Color(0xFF58A6FF),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],
