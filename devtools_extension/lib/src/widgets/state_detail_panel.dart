@@ -127,22 +127,80 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
         stateInfo.location != null || stateInfo.locationFile != null;
     final hasCallChain = stateInfo.callChain.isNotEmpty;
 
-    // 如果沒有明確的 location（只有從 stackTrace 推導的），顯示完整的 call chain
-    if (!hasExplicitLocation) {
-      if (!hasCallChain) {
-        return const SizedBox.shrink();
-      }
-      // 顯示完整 call chain
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF238636)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    // 如果既沒有 location 也沒有 call chain，不顯示任何內容
+    if (!hasExplicitLocation && !hasCallChain) {
+      return const SizedBox.shrink();
+    }
+
+    final triggerLocation = stateInfo.triggerLocation;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF238636)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Change Source 區塊（當有 explicit location 時顯示）
+          if (hasExplicitLocation) ...[
+            const Row(
+              children: [
+                Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Change Source',
+                  style: TextStyle(
+                    color: Color(0xFF3FB950),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      locationString ??
+                          '${triggerLocation!.file}:${triggerLocation.line}',
+                      style: const TextStyle(
+                        color: Color(0xFF58A6FF),
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.copy,
+                      color: Color(0xFF8B949E),
+                      size: 18,
+                    ),
+                    onPressed: () {
+                      final text =
+                          locationString ??
+                          '${triggerLocation?.file}:${triggerLocation?.line}';
+                      Clipboard.setData(ClipboardData(text: text));
+                    },
+                    tooltip: 'Copy location',
+                  ),
+                ],
+              ),
+            ),
+          ],
+          // Call Chain 區塊（當有 call chain 時顯示）
+          if (hasCallChain) ...[
+            if (hasExplicitLocation) const SizedBox(height: 20),
             Row(
               children: [
                 const Icon(Icons.layers, color: Color(0xFF3FB950), size: 18),
@@ -174,73 +232,6 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               child: _buildCallChainList(),
             ),
           ],
-        ),
-      );
-    }
-
-    // 有明確的 location 時顯示 Change Source
-    final triggerLocation = stateInfo.triggerLocation;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF238636)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Change Source',
-                style: TextStyle(
-                  color: Color(0xFF3FB950),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D1117),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    locationString ??
-                        '${triggerLocation!.file}:${triggerLocation.line}',
-                    style: const TextStyle(
-                      color: Color(0xFF58A6FF),
-                      fontSize: 13,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.copy,
-                    color: Color(0xFF8B949E),
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    final text =
-                        locationString ??
-                        '${triggerLocation?.file}:${triggerLocation?.line}';
-                    Clipboard.setData(ClipboardData(text: text));
-                  },
-                  tooltip: 'Copy location',
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

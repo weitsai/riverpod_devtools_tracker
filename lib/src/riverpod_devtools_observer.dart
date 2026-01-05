@@ -38,6 +38,11 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Event counter
   int _eventCounter = 0;
 
+  /// 記錄每個 Provider 最近一次有效的觸發堆疊（用於異步 Provider）
+  /// Key: Provider 的名稱
+  /// 這個堆疊會在每次有有效用戶代碼的操作時更新
+  final Map<String, _ProviderStackTrace> _providerStacks = {};
+
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
@@ -47,11 +52,23 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   void didAddProvider(ProviderObserverContext context, Object? value) {
     if (!config.enabled) return;
 
+    final providerName = _getProviderName(context);
+
+    // 捕獲初始堆疊（用於異步 Provider）
+    final stackTrace = StackTrace.current;
+    final callChain = _parser.parseCallChain(stackTrace);
+    final triggerLocation = _parser.findTriggerLocation(stackTrace);
+
+    // 保存有效的堆疊信息，供後續異步完成時使用
+    _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
+
     _postStateChange(
-      providerName: _getProviderName(context),
+      providerName: providerName,
       providerType: _getProviderType(context),
       changeType: 'add',
       currentValue: value,
+      triggerLocation: triggerLocation,
+      callChain: callChain,
     );
   }
 
@@ -63,13 +80,30 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    final providerName = _getProviderName(context);
+
     // Capture current stack trace to track change source
     final stackTrace = StackTrace.current;
-    final callChain = _parser.parseCallChain(stackTrace);
-    final triggerLocation = _parser.findTriggerLocation(stackTrace);
+    var callChain = _parser.parseCallChain(stackTrace);
+    var triggerLocation = _parser.findTriggerLocation(stackTrace);
+
+    // 檢查當前堆疊是否有有效的用戶代碼（非 provider 文件）
+    final hasUserCode = _hasValidUserCode(callChain);
+
+    if (hasUserCode) {
+      // 當前堆疊有有效的用戶代碼，保存它供後續異步完成時使用
+      _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
+    } else {
+      // 當前堆疊沒有用戶代碼（異步完成的情況），嘗試使用保存的堆疊
+      final savedStack = _providerStacks[providerName];
+      if (savedStack != null) {
+        callChain = savedStack.callChain;
+        triggerLocation = savedStack.triggerLocation;
+      }
+    }
 
     _postStateChange(
-      providerName: _getProviderName(context),
+      providerName: providerName,
       providerType: _getProviderType(context),
       changeType: 'update',
       previousValue: previousValue,
@@ -83,8 +117,13 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   void didDisposeProvider(ProviderObserverContext context) {
     if (!config.enabled) return;
 
+    final providerName = _getProviderName(context);
+    
+    // 注意：不在這裡清理堆疊，因為 provider 可能被 invalidate 後立即重新創建
+    // 堆疊會在下一次 add 或有效 update 時自動更新
+
     _postStateChange(
-      providerName: _getProviderName(context),
+      providerName: providerName,
       providerType: _getProviderType(context),
       changeType: 'dispose',
     );
@@ -157,6 +196,39 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     return 'Unknown';
   }
 
+  /// Check if it's a provider file
+  bool _isProviderFile(String file) {
+    return file.contains('_provider.dart') ||
+        file.contains('/providers/') ||
+        file.endsWith('.g.dart');
+  }
+
+  /// 檢查 call chain 是否包含有效的用戶代碼（非 provider 文件）
+  bool _hasValidUserCode(List<LocationInfo> callChain) {
+    if (callChain.isEmpty) return false;
+    // 檢查是否至少有一個不是 provider 文件的位置
+    return callChain.any((loc) => !_isProviderFile(loc.file));
+  }
+
+  /// 保存有效的堆疊信息
+  void _saveStackIfValid(
+    String providerName,
+    StackTrace stackTrace,
+    LocationInfo? triggerLocation,
+    List<LocationInfo> callChain,
+  ) {
+    // 只有當堆疊包含有效的用戶代碼時才保存
+    if (_hasValidUserCode(callChain) || 
+        (triggerLocation != null && !_isProviderFile(triggerLocation.file))) {
+      _providerStacks[providerName] = _ProviderStackTrace(
+        stackTrace: stackTrace,
+        triggerLocation: triggerLocation,
+        callChain: callChain,
+        timestamp: DateTime.now(),
+      );
+    }
+  }
+
   /// Send state change event to DevTools
   void _postStateChange({
     required String providerName,
@@ -176,17 +248,20 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         'previousValue': _serializeValue(previousValue),
         'currentValue': _serializeValue(currentValue),
         'timestamp': DateTime.now().toIso8601String(),
-        // Location info
-        if (triggerLocation != null) ...{
-          'location': triggerLocation.location,
-          'file': triggerLocation.file,
-          'line': triggerLocation.line,
-          'function': triggerLocation.function,
-        },
-        // Call chain
-        if (callChain != null && callChain.isNotEmpty)
-          'callChain': callChain.map((l) => l.toJson()).toList(),
       };
+
+      // Location info
+      if (triggerLocation != null) {
+        eventData['location'] = triggerLocation.location;
+        eventData['file'] = triggerLocation.file;
+        eventData['line'] = triggerLocation.line;
+        eventData['function'] = triggerLocation.function;
+      }
+
+      // Call chain
+      if (callChain != null && callChain.isNotEmpty) {
+        eventData['callChain'] = callChain.map((l) => l.toJson()).toList();
+      }
 
       // Send to DevTools using postEvent
       developer.postEvent('riverpod_state_change', eventData);
@@ -372,4 +447,19 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       };
     }
   }
+}
+
+/// 記錄 Provider 的觸發堆疊信息
+class _ProviderStackTrace {
+  final StackTrace stackTrace;
+  final LocationInfo? triggerLocation;
+  final List<LocationInfo> callChain;
+  final DateTime timestamp;
+
+  _ProviderStackTrace({
+    required this.stackTrace,
+    required this.triggerLocation,
+    required this.callChain,
+    required this.timestamp,
+  });
 }

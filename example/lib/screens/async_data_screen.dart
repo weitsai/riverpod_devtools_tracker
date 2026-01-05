@@ -21,58 +21,58 @@ class AsyncDataScreen extends ConsumerWidget {
         children: [
           const Text(
             'FutureProvider 範例',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: asyncData.when(
-                data: (data) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
+                data:
+                    (data) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('載入成功'),
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('載入成功'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(data),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(data),
-                  ],
-                ),
-                loading: () => const Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 12),
-                    Text('載入中...'),
-                  ],
-                ),
-                error: (error, stack) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
+                loading:
+                    () => const Row(
                       children: [
-                        Icon(Icons.error, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('載入失敗'),
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text('載入中...'),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: const TextStyle(color: Colors.red),
+                error:
+                    (error, stack) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.error, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('載入失敗'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -85,58 +85,58 @@ class AsyncDataScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           const Text(
             'StateNotifier + AsyncValue 範例',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: refreshableData.when(
-                data: (data) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
+                data:
+                    (data) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('載入成功'),
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('載入成功'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(data),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(data),
-                  ],
-                ),
-                loading: () => const Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 12),
-                    Text('載入中...'),
-                  ],
-                ),
-                error: (error, stack) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
+                loading:
+                    () => const Row(
                       children: [
-                        Icon(Icons.error, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('載入失敗'),
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text('載入中...'),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: const TextStyle(color: Colors.red),
+                error:
+                    (error, stack) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.error, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('載入失敗'),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
               ),
             ),
           ),

@@ -42,7 +42,6 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   final FocusNode _searchFocusNode = FocusNode();
   final LayerLink _searchLayerLink = LayerLink();
   OverlayEntry? _searchOverlay;
-  bool _showSearchSuggestions = false;
 
   // 篩選器 overlay
   final LayerLink _filterLayerLink = LayerLink();
@@ -115,8 +114,6 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           _isConnected = true;
         });
       }
-
-      debugPrint('DevTools extension connected successfully!');
     } catch (e) {
       debugPrint('Error during service connection: $e');
     }
@@ -128,9 +125,6 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
     try {
       final stateInfo = ProviderStateInfo.fromJson(data);
-      debugPrint(
-        '[DevTools] Received: ${stateInfo.providerName} (${stateInfo.changeType}), hasLocation: ${stateInfo.hasLocation}',
-      );
       setState(() {
         _providerStates.insert(0, stateInfo);
         _latestStates[stateInfo.providerName] = stateInfo;
@@ -160,7 +154,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
         // 非 update 類型都保留
         if (s.changeType != 'update') return true;
         // 有 location 的 update 都保留
-        if (s.hasLocation) return true;
+        if (s.hasLocation) {
+          return true;
+        }
         // 異步 Provider 的完成更新也保留（即使沒有 location）
         // 檢查值是否為 AsyncValue 類型
         if (_isAsyncValueUpdate(s)) {
