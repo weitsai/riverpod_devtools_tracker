@@ -159,8 +159,15 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       states = states.where((s) {
         // 非 update 類型都保留
         if (s.changeType != 'update') return true;
-        // update 類型：只保留有 location 的
-        return s.hasLocation;
+        // 有 location 的 update 都保留
+        if (s.hasLocation) return true;
+        // 異步 Provider 的完成更新也保留（即使沒有 location）
+        // 檢查值是否為 AsyncValue 類型
+        if (_isAsyncValueUpdate(s)) {
+          return true;
+        }
+        // 其他沒有 location 的 update（如 derived provider 自動計算）過濾掉
+        return false;
       }).toList();
     }
 
@@ -176,6 +183,31 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     }
 
     return states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
+  /// 檢查是否為異步值的更新（FutureProvider/StreamProvider/AsyncNotifierProvider）
+  bool _isAsyncValueUpdate(ProviderStateInfo s) {
+    // 檢查 previousValue 或 currentValue 是否包含 AsyncValue 模式
+    final asyncPattern = RegExp(r'Async(Loading|Data|Error)<');
+
+    String? getValueString(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map) {
+        // 檢查 {type, value} 格式
+        final type = value['type'];
+        final val = value['value'];
+        if (type is String && asyncPattern.hasMatch(type)) return type;
+        if (val is String && asyncPattern.hasMatch(val)) return val;
+      }
+      return value.toString();
+    }
+
+    final prevStr = getValueString(s.previousValue);
+    final currStr = getValueString(s.currentValue);
+
+    return (prevStr != null && asyncPattern.hasMatch(prevStr)) ||
+        (currStr != null && asyncPattern.hasMatch(currStr));
   }
 
   /// 取得所有不重複的 provider 名稱
@@ -481,24 +513,26 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       );
     }
 
-    return Row(
-      children: [
-        SizedBox(width: 400, child: _buildProviderList()),
-        Container(width: 1, color: const Color(0xFF30363D)),
-        Expanded(
-          child: _selectedProvider != null
-              ? Align(
-                  alignment: Alignment.topCenter,
-                  child: StateDetailPanel(stateInfo: _selectedProvider!),
-                )
-              : Center(
-                  child: Text(
-                    'Select a provider to view details',
-                    style: TextStyle(color: Colors.white.withOpacity(0.5)),
+    return SelectionArea(
+      child: Row(
+        children: [
+          SizedBox(width: 400, child: _buildProviderList()),
+          Container(width: 1, color: const Color(0xFF30363D)),
+          Expanded(
+            child: _selectedProvider != null
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    child: StateDetailPanel(stateInfo: _selectedProvider!),
+                  )
+                : Center(
+                    child: Text(
+                      'Select a provider to view details',
+                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    ),
                   ),
-                ),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
