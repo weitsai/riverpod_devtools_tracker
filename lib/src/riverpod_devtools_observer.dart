@@ -315,6 +315,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   }
 
   /// Serialize value for transmission
+  /// Note: We send full values to DevTools (no truncation here).
+  /// Truncation is only done for console output in _formatValue.
   dynamic _serializeValue(Object? value) {
     if (value == null) return null;
 
@@ -324,38 +326,49 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         return value;
       }
 
-      // Try to convert to JSON
-      if (value is Map || value is List) {
-        // Try deep serialization
-        return json.decode(json.encode(value));
-      }
-
       // Enum types
       if (value is Enum) {
         return value.name;
       }
 
-      // Try toString for other types
-      final stringValue = value.toString();
+      // Try to convert to JSON (for simple Map/List with primitives)
+      if (value is Map || value is List) {
+        try {
+          return json.decode(json.encode(value));
+        } catch (_) {
+          // If JSON serialization fails, convert to string representation
+          return {
+            'type': value.runtimeType.toString(),
+            'value': value.toString(),
+          };
+        }
+      }
 
       // Try to call toJson if available
       try {
         final dynamic dynamicValue = value;
         if (dynamicValue.toJson != null) {
-          return dynamicValue.toJson();
+          final jsonResult = dynamicValue.toJson();
+          // Try to make it JSON-safe
+          try {
+            return json.decode(json.encode(jsonResult));
+          } catch (_) {
+            return jsonResult;
+          }
         }
       } catch (_) {}
 
+      // Return full value as string for DevTools
+      // DevTools extension will handle display truncation with expand/collapse
       return {
         'type': value.runtimeType.toString(),
-        'value': stringValue.length > config.maxValueLength
-            ? '${stringValue.substring(0, config.maxValueLength)}...'
-            : stringValue,
+        'value': value.toString(),
       };
     } catch (e) {
+      // Last resort: just use toString
       return {
         'type': value.runtimeType.toString(),
-        'error': 'Unable to serialize: $e',
+        'value': value.toString(),
       };
     }
   }
