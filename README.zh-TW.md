@@ -3,7 +3,7 @@
 一個強大的 Flutter 套件，能自動追蹤 Riverpod 狀態變化並提供詳細的調用堆疊資訊，幫助你精確定位狀態變化的程式碼來源，讓除錯更輕鬆。
 
 ![DevTools Extension](https://img.shields.io/badge/DevTools-Extension-blue)
-![Flutter](https://img.shields.io/badge/Flutter-3.19+-blue)
+![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
 
 繁體中文 | **[English](README.md)**
@@ -324,8 +324,8 @@ dart run devtools_extensions build_and_copy --source=. --dest=../extension/devto
 
 ## 系統需求
 
-- Flutter SDK >= 3.19.0
-- Dart SDK >= 3.10.0
+- Flutter SDK >= 3.27.0
+- Dart SDK >= 3.7.0
 - flutter_riverpod >= 3.1.0
 
 ## 授權

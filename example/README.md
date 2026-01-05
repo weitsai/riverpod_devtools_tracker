@@ -265,7 +265,7 @@ class TodoList extends _$TodoList {
 
 - [Riverpod 官方文件](https://riverpod.dev)
 - [Flutter DevTools 文件](https://docs.flutter.dev/tools/devtools)
-- [riverpod_devtools_tracker GitHub](https://github.com/aspect-build/riverpod_devtools_tracker)
+- [riverpod_devtools_tracker GitHub](https://github.com/weitsai/riverpod_devtools_tracker)
 
 ## 常見問題
 
@@ -279,8 +279,8 @@ A: 確保：
 A: 在 `TrackerConfig` 中自定義配置：
 ```dart
 TrackerConfig(
-  packagePrefixes: ['example'],
-  ignoredProviderNames: ['某些不想追蹤的Provider'],
+  packagePrefixes: ['package:example/'],
+  ignoredFilePatterns: ['.g.dart', 'generated.dart'],  // 忽略生成的檔案
 )
 ```
 

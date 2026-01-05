@@ -3,7 +3,7 @@
 A powerful Flutter package that automatically tracks Riverpod state changes with detailed call stack information, helping you debug by showing exactly where state changes originated in your code.
 
 ![DevTools Extension](https://img.shields.io/badge/DevTools-Extension-blue)
-![Flutter](https://img.shields.io/badge/Flutter-3.19+-blue)
+![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
 
 **[繁體中文](README.zh-TW.md)** | English
@@ -324,8 +324,8 @@ If the tracker is slowing down your app:
 
 ## Requirements
 
-- Flutter SDK >= 3.19.0
-- Dart SDK >= 3.10.0
+- Flutter SDK >= 3.27.0
+- Dart SDK >= 3.7.0
 - flutter_riverpod >= 3.1.0
 
 ## License
