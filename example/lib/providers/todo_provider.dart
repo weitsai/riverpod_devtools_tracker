@@ -67,14 +67,14 @@ class TodoList extends _$TodoList {
 
 /// 已完成的待辦事項數量
 @riverpod
-int completedTodoCount(ref) {
+int completedTodoCount(Ref ref) {
   final todos = ref.watch(todoListProvider);
   return todos.where((todo) => todo.completed).length;
 }
 
 /// 未完成的待辦事項數量
 @riverpod
-int activeTodoCount(ref) {
+int activeTodoCount(Ref ref) {
   final todos = ref.watch(todoListProvider);
   return todos.where((todo) => !todo.completed).length;
 }
