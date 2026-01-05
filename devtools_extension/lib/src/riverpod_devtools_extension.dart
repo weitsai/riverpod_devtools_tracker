@@ -325,7 +325,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                         ),
                         backgroundColor: const Color(
                           0xFF6366F1,
-                        ).withOpacity(0.3),
+                        ).withValues(alpha: 0.3),
                         deleteIconColor: Colors.white,
                         side: const BorderSide(color: Color(0xFF6366F1)),
                         onDeleted: () {
@@ -353,11 +353,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     decoration: InputDecoration(
                       hintText: 'Filter Providers...',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                       prefixIcon: Icon(
                         Icons.filter_alt,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -410,7 +410,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF238636).withOpacity(0.2),
+                  color: const Color(0xFF238636).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -426,7 +426,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 label: Text(_showAllHistory ? 'All History' : 'Latest Only'),
                 selected: _showAllHistory,
                 onSelected: (value) => setState(() => _showAllHistory = value),
-                selectedColor: const Color(0xFF6366F1).withOpacity(0.3),
+                selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
                   color:
@@ -508,7 +508,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           Text(
             'Connecting to application...',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 16,
             ),
           ),
@@ -516,7 +516,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           Text(
             'Make sure your app is running with RiverpodDevToolsObserver',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 12,
             ),
           ),
@@ -534,13 +534,13 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             Icon(
               Icons.inbox_outlined,
               size: 64,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No state changes yet',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 16,
               ),
             ),
@@ -548,7 +548,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             Text(
               'Provider state changes will appear here',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 fontSize: 12,
               ),
             ),
@@ -572,7 +572,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     : Center(
                       child: Text(
                         'Select a provider to view details',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                       ),
                     ),
           ),
@@ -922,7 +922,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                             isSelected
                                                 ? const Color(
                                                   0xFF6366F1,
-                                                ).withOpacity(0.1)
+                                                ).withValues(alpha: 0.1)
                                                 : null,
                                         child: Row(
                                           children: [

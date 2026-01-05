@@ -3,6 +3,12 @@ description: A powerful Flutter package that tracks Riverpod state changes with 
 version: 1.0.0
 homepage: https://github.com/weitsai/riverpod_devtools_tracker
 repository: https://github.com/weitsai/riverpod_devtools_tracker
+topics:
+  - riverpod
+  - devtools
+  - state-management
+  - debugging
+  - flutter
 
 environment:
   sdk: ^3.7.0

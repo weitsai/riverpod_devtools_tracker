@@ -50,7 +50,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
         color: isSelected
-            ? const Color(0xFF6366F1).withOpacity(0.2)
+            ? const Color(0xFF6366F1).withValues(alpha: 0.2)
             : const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
@@ -82,7 +82,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF8B949E).withOpacity(0.2),
+                          color: const Color(0xFF8B949E).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -119,7 +119,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: _getTypeColor().withOpacity(0.2),
+                        color: _getTypeColor().withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -560,7 +560,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Icon(icon, color: color, size: 14),

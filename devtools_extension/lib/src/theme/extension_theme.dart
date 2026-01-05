@@ -48,7 +48,7 @@ class ExtensionTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFF21262D),
-        selectedColor: const Color(0xFF6366F1).withOpacity(0.3),
+        selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
         labelStyle: const TextStyle(color: Color(0xFF8B949E)),
         side: const BorderSide(color: Color(0xFF30363D)),
         shape: RoundedRectangleBorder(

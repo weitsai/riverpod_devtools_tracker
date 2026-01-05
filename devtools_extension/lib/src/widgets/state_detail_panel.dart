@@ -46,8 +46,8 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF6366F1).withOpacity(0.2),
-            const Color(0xFF8B5CF6).withOpacity(0.1),
+            const Color(0xFF6366F1).withValues(alpha: 0.2),
+            const Color(0xFF8B5CF6).withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -58,7 +58,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.3),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
@@ -107,7 +107,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -485,7 +485,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isFirst ? const Color(0xFF238636).withOpacity(0.1) : null,
+          color: isFirst ? const Color(0xFF238636).withValues(alpha: 0.1) : null,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -548,7 +548,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isUserCode ? const Color(0xFF238636).withOpacity(0.1) : null,
+          color: isUserCode ? const Color(0xFF238636).withValues(alpha: 0.1) : null,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
