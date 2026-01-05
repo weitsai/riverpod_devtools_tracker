@@ -92,13 +92,77 @@ class ProviderStateInfo {
   String _formatValue(dynamic value) {
     if (value == null) return 'null';
     try {
-      if (value is Map || value is List) {
+      // Handle {type, value} format from serialization
+      if (value is Map) {
+        // If it's a serialized object with type and value fields
+        if (value.containsKey('type') && value.containsKey('value')) {
+          final innerValue = value['value'];
+          final type = value['type'] as String?;
+
+          // Format AsyncValue types more nicely
+          if (innerValue is String) {
+            return _formatAsyncValue(innerValue, type);
+          }
+          return innerValue?.toString() ?? 'null';
+        }
+        // If it's an error format
+        if (value.containsKey('type') && value.containsKey('error')) {
+          return 'Error: ${value['error']}';
+        }
+        // Regular map - format as JSON
         return const JsonEncoder.withIndent('  ').convert(value);
       }
-      return value.toString();
+      if (value is List) {
+        return const JsonEncoder.withIndent('  ').convert(value);
+      }
+
+      // Handle string values that might be AsyncValue
+      final strValue = value.toString();
+      return _formatAsyncValue(strValue, null);
     } catch (e) {
       return value.toString();
     }
+  }
+
+  /// Format AsyncValue types for better readability
+  String _formatAsyncValue(String value, String? type) {
+    // AsyncLoading with value pattern: AsyncLoading<Type>(value: ...)
+    // This happens when refreshing - it's loading but has previous value
+    final loadingWithValuePattern =
+        RegExp(r'^AsyncLoading<(.+)>\(value:\s*(.+)\)$');
+    final loadingWithValueMatch = loadingWithValuePattern.firstMatch(value);
+    if (loadingWithValueMatch != null) {
+      final innerValue = loadingWithValueMatch.group(2);
+      return '⏳ Loading... (前值: $innerValue)';
+    }
+
+    // AsyncLoading empty pattern: AsyncLoading<Type>()
+    final loadingPattern = RegExp(r'^AsyncLoading<(.+)>\(\)$');
+    final loadingMatch = loadingPattern.firstMatch(value);
+    if (loadingMatch != null) {
+      final innerType = loadingMatch.group(1);
+      return '⏳ Loading... (${innerType ?? 'unknown'})';
+    }
+
+    // AsyncData pattern: AsyncData<Type>(value: ...)
+    final dataPattern = RegExp(r'^AsyncData<(.+)>\(value:\s*(.+)\)$');
+    final dataMatch = dataPattern.firstMatch(value);
+    if (dataMatch != null) {
+      final innerValue = dataMatch.group(2);
+      return '✅ Data: $innerValue';
+    }
+
+    // AsyncError pattern: AsyncError<Type>(error: ..., stackTrace: ...)
+    final errorPattern =
+        RegExp(r'^AsyncError<(.+)>\(error:\s*(.+?),\s*stackTrace:');
+    final errorMatch = errorPattern.firstMatch(value);
+    if (errorMatch != null) {
+      final error = errorMatch.group(2);
+      return '❌ Error: $error';
+    }
+
+    // Return original value if no pattern matches
+    return value;
   }
 
   /// Get the code location that triggered the change
