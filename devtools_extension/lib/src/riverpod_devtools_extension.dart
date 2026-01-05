@@ -23,7 +23,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   ProviderStateInfo? _selectedProvider;
   StreamSubscription<Event>? _extensionEventSubscription;
   bool _isConnected = false;
-  String _filterText = '';
+  String _searchText = ''; // 搜尋框輸入文字
+  final Set<String> _selectedProviders = {}; // 已選中的 providers（複選）
   bool _showAllHistory = true;
   VoidCallback? _connectionListener;
 
@@ -40,6 +41,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
   // 搜尋建議
   final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
   final LayerLink _searchLayerLink = LayerLink();
   OverlayEntry? _searchOverlay;
 
@@ -55,11 +57,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   void _onSearchFocusChanged() {
-    if (_searchFocusNode.hasFocus && _filterText.isEmpty) {
+    if (_searchFocusNode.hasFocus) {
       _showSearchSuggestionsOverlay();
-    } else if (!_searchFocusNode.hasFocus) {
-      _hideSearchSuggestionsOverlay();
     }
+    // 不自動關閉 overlay，讓用戶可以複選
   }
 
   void _setupConnectionListener() {
@@ -139,43 +140,41 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   List<ProviderStateInfo> get _filteredProviders {
-    var states = _showAllHistory
-        ? _providerStates
-        : _latestStates.values.toList();
+    var states =
+        _showAllHistory ? _providerStates : _latestStates.values.toList();
 
     // 篩選狀態類型
-    states = states
-        .where((s) => _selectedChangeTypes.contains(s.changeType))
-        .toList();
+    states =
+        states
+            .where((s) => _selectedChangeTypes.contains(s.changeType))
+            .toList();
 
     // 隱藏自動計算的更新（沒有 location 的 update）
     if (_hideAutoComputed) {
-      states = states.where((s) {
-        // 非 update 類型都保留
-        if (s.changeType != 'update') return true;
-        // 有 location 的 update 都保留
-        if (s.hasLocation) {
-          return true;
-        }
-        // 異步 Provider 的完成更新也保留（即使沒有 location）
-        // 檢查值是否為 AsyncValue 類型
-        if (_isAsyncValueUpdate(s)) {
-          return true;
-        }
-        // 其他沒有 location 的 update（如 derived provider 自動計算）過濾掉
-        return false;
-      }).toList();
+      states =
+          states.where((s) {
+            // 非 update 類型都保留
+            if (s.changeType != 'update') return true;
+            // 有 location 的 update 都保留
+            if (s.hasLocation) {
+              return true;
+            }
+            // 異步 Provider 的完成更新也保留（即使沒有 location）
+            // 檢查值是否為 AsyncValue 類型
+            if (_isAsyncValueUpdate(s)) {
+              return true;
+            }
+            // 其他沒有 location 的 update（如 derived provider 自動計算）過濾掉
+            return false;
+          }).toList();
     }
 
-    // 篩選 provider 名稱
-    if (_filterText.isNotEmpty) {
-      states = states
-          .where(
-            (s) => s.providerName.toLowerCase().contains(
-              _filterText.toLowerCase(),
-            ),
-          )
-          .toList();
+    // 篩選已選中的 providers（複選）
+    if (_selectedProviders.isNotEmpty) {
+      states =
+          states
+              .where((s) => _selectedProviders.contains(s.providerName))
+              .toList();
     }
 
     return states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -218,11 +217,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   /// 取得符合搜尋條件的 provider 建議
   List<String> get _searchSuggestions {
     final allNames = _allProviderNames;
-    if (_filterText.isEmpty) {
+    if (_searchText.isEmpty) {
       return allNames;
     }
     return allNames
-        .where((name) => name.toLowerCase().contains(_filterText.toLowerCase()))
+        .where((name) => name.toLowerCase().contains(_searchText.toLowerCase()))
         .toList();
   }
 
@@ -236,6 +235,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     _extensionEventSubscription?.cancel();
     _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchFocusNode.dispose();
+    _searchController.dispose();
     _hideSearchSuggestionsOverlay();
     _hideFilterOverlay();
     super.dispose();
@@ -308,40 +308,83 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             ],
           ),
           const SizedBox(height: 12),
+          // 已選中的 provider chips
+          if (_selectedProviders.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children:
+                    _selectedProviders.map((provider) {
+                      return Chip(
+                        label: Text(provider),
+                        labelStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        backgroundColor: const Color(
+                          0xFF6366F1,
+                        ).withOpacity(0.3),
+                        deleteIconColor: Colors.white,
+                        side: const BorderSide(color: Color(0xFF6366F1)),
+                        onDeleted: () {
+                          setState(() {
+                            _selectedProviders.remove(provider);
+                          });
+                        },
+                      );
+                    }).toList(),
+              ),
+            ),
           Row(
             children: [
               Expanded(
                 child: CompositedTransformTarget(
                   link: _searchLayerLink,
                   child: TextField(
+                    controller: _searchController,
                     focusNode: _searchFocusNode,
                     onChanged: (value) {
-                      setState(() => _filterText = value);
-                      if (value.isNotEmpty || _searchFocusNode.hasFocus) {
-                        _showSearchSuggestionsOverlay();
-                      } else {
-                        _hideSearchSuggestionsOverlay();
-                      }
+                      setState(() => _searchText = value);
+                      _showSearchSuggestionsOverlay();
                     },
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Search Provider...',
+                      hintText: 'Filter Providers...',
                       hintStyle: TextStyle(
                         color: Colors.white.withOpacity(0.5),
                       ),
                       prefixIcon: Icon(
-                        Icons.search,
+                        Icons.filter_alt,
                         color: Colors.white.withOpacity(0.5),
                       ),
-                      suffixIcon: _filterText.isNotEmpty
-                          ? IconButton(
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_searchText.isNotEmpty)
+                            IconButton(
                               icon: const Icon(Icons.clear, size: 18),
                               onPressed: () {
-                                setState(() => _filterText = '');
+                                setState(() {
+                                  _searchText = '';
+                                  _searchController.clear();
+                                });
                                 _showSearchSuggestionsOverlay();
                               },
-                            )
-                          : null,
+                            ),
+                          if (_selectedProviders.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              tooltip: 'Clear All Filters',
+                              onPressed: () {
+                                setState(() {
+                                  _selectedProviders.clear();
+                                });
+                              },
+                            ),
+                        ],
+                      ),
                       filled: true,
                       fillColor: const Color(0xFF0D1117),
                       border: OutlineInputBorder(
@@ -386,14 +429,16 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 selectedColor: const Color(0xFF6366F1).withOpacity(0.3),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
-                  color: _showAllHistory
-                      ? const Color(0xFF6366F1)
-                      : const Color(0xFF8B949E),
+                  color:
+                      _showAllHistory
+                          ? const Color(0xFF6366F1)
+                          : const Color(0xFF8B949E),
                 ),
                 side: BorderSide(
-                  color: _showAllHistory
-                      ? const Color(0xFF6366F1)
-                      : const Color(0xFF30363D),
+                  color:
+                      _showAllHistory
+                          ? const Color(0xFF6366F1)
+                          : const Color(0xFF30363D),
                 ),
               ),
               const SizedBox(width: 8),
@@ -402,9 +447,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 child: IconButton(
                   icon: Icon(
                     Icons.filter_list,
-                    color: _selectedChangeTypes.length < 4
-                        ? const Color(0xFF6366F1)
-                        : const Color(0xFF8B949E),
+                    color:
+                        _selectedChangeTypes.length < 4
+                            ? const Color(0xFF6366F1)
+                            : const Color(0xFF8B949E),
                   ),
                   tooltip: 'Filter Change Types',
                   onPressed: () {
@@ -431,18 +477,20 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           height: 8,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _isConnected
-                ? const Color(0xFF3FB950)
-                : const Color(0xFFF85149),
+            color:
+                _isConnected
+                    ? const Color(0xFF3FB950)
+                    : const Color(0xFFF85149),
           ),
         ),
         const SizedBox(width: 6),
         Text(
           _isConnected ? 'Connected' : 'Disconnected',
           style: TextStyle(
-            color: _isConnected
-                ? const Color(0xFF3FB950)
-                : const Color(0xFFF85149),
+            color:
+                _isConnected
+                    ? const Color(0xFF3FB950)
+                    : const Color(0xFFF85149),
             fontSize: 12,
           ),
         ),
@@ -515,17 +563,18 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           SizedBox(width: 400, child: _buildProviderList()),
           Container(width: 1, color: const Color(0xFF30363D)),
           Expanded(
-            child: _selectedProvider != null
-                ? Align(
-                    alignment: Alignment.topCenter,
-                    child: StateDetailPanel(stateInfo: _selectedProvider!),
-                  )
-                : Center(
-                    child: Text(
-                      'Select a provider to view details',
-                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            child:
+                _selectedProvider != null
+                    ? Align(
+                      alignment: Alignment.topCenter,
+                      child: StateDetailPanel(stateInfo: _selectedProvider!),
+                    )
+                    : Center(
+                      child: Text(
+                        'Select a provider to view details',
+                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      ),
                     ),
-                  ),
           ),
         ],
       ),
@@ -568,70 +617,71 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   void _showFilterOverlay() {
     final overlay = Overlay.of(context);
     _filterOverlay = OverlayEntry(
-      builder: (context) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: _hideFilterOverlay,
-        child: Stack(
-          children: [
-            Positioned(
-              right: 16,
-              top: 130,
-              child: GestureDetector(
-                onTap: () {}, // 防止點擊菜單本身時關閉
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xFF161B22),
-                  child: Container(
-                    width: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF30363D)),
+      builder:
+          (context) => GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _hideFilterOverlay,
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 16,
+                  top: 130,
+                  child: GestureDetector(
+                    onTap: () {}, // 防止點擊菜單本身時關閉
+                    child: Material(
+                      elevation: 8,
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Color(0xFF30363D)),
-                            ),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.filter_list,
-                                color: Color(0xFF8B949E),
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Filter Change Types',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                      color: const Color(0xFF161B22),
+                      child: Container(
+                        width: 200,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFF30363D)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(color: Color(0xFF30363D)),
                                 ),
                               ),
-                            ],
-                          ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.filter_list,
+                                    color: Color(0xFF8B949E),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Filter Change Types',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _buildFilterCheckbox('add', '➕ Add'),
+                            _buildFilterCheckbox('update', '🔄 Update'),
+                            _buildFilterCheckbox('dispose', '🗑️ Dispose'),
+                            _buildFilterCheckbox('error', '❌ Error'),
+                            const Divider(height: 1, color: Color(0xFF30363D)),
+                            _buildAutoComputedToggle(),
+                          ],
                         ),
-                        _buildFilterCheckbox('add', '➕ Add'),
-                        _buildFilterCheckbox('update', '🔄 Update'),
-                        _buildFilterCheckbox('dispose', '🗑️ Dispose'),
-                        _buildFilterCheckbox('error', '❌ Error'),
-                        const Divider(height: 1, color: Color(0xFF30363D)),
-                        _buildAutoComputedToggle(),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
     overlay.insert(_filterOverlay!);
   }
@@ -660,9 +710,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           children: [
             Icon(
               isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-              color: isSelected
-                  ? const Color(0xFF6366F1)
-                  : const Color(0xFF8B949E),
+              color:
+                  isSelected
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF8B949E),
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -709,9 +760,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           children: [
             Icon(
               _hideAutoComputed ? Icons.visibility_off : Icons.visibility,
-              color: _hideAutoComputed
-                  ? const Color(0xFF8B949E)
-                  : const Color(0xFF6366F1),
+              color:
+                  _hideAutoComputed
+                      ? const Color(0xFF8B949E)
+                      : const Color(0xFF6366F1),
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -724,9 +776,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                         ? 'Show auto-computed'
                         : 'Hide auto-computed',
                     style: TextStyle(
-                      color: _hideAutoComputed
-                          ? Colors.white
-                          : const Color(0xFF6366F1),
+                      color:
+                          _hideAutoComputed
+                              ? Colors.white
+                              : const Color(0xFF6366F1),
                       fontSize: 13,
                     ),
                   ),
@@ -752,78 +805,185 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
     final overlay = Overlay.of(context);
     _searchOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        width: 400,
-        child: CompositedTransformFollower(
-          link: _searchLayerLink,
-          targetAnchor: Alignment.bottomLeft,
-          followerAnchor: Alignment.topLeft,
-          offset: const Offset(0, 8),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(8),
-            color: const Color(0xFF161B22),
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 300),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFF30363D)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                shrinkWrap: true,
-                itemCount: suggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = suggestions[index];
-                  final isHighlighted =
-                      _filterText.isNotEmpty &&
-                      suggestion.toLowerCase().contains(
-                        _filterText.toLowerCase(),
-                      );
-
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        _filterText = suggestion;
-                      });
-                      _searchFocusNode.unfocus();
-                      _hideSearchSuggestionsOverlay();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.data_object,
-                            size: 16,
-                            color: Color(0xFF8B949E),
+      builder:
+          (context) => GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              _searchFocusNode.unfocus();
+              _hideSearchSuggestionsOverlay();
+            },
+            child: Stack(
+              children: [
+                Positioned(
+                  width: 400,
+                  child: CompositedTransformFollower(
+                    link: _searchLayerLink,
+                    targetAnchor: Alignment.bottomLeft,
+                    followerAnchor: Alignment.topLeft,
+                    offset: const Offset(0, 8),
+                    child: GestureDetector(
+                      onTap: () {}, // 防止點擊列表時關閉
+                      child: Material(
+                        elevation: 8,
+                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFF161B22),
+                        child: Container(
+                          constraints: const BoxConstraints(maxHeight: 300),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFF30363D)),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              suggestion,
-                              style: TextStyle(
-                                color: isHighlighted
-                                    ? const Color(0xFF6366F1)
-                                    : Colors.white,
-                                fontSize: 13,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 標題列
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Color(0xFF30363D),
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.filter_alt,
+                                      color: Color(0xFF8B949E),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Select Providers',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    if (_selectedProviders.isNotEmpty)
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _selectedProviders.clear();
+                                          });
+                                        },
+                                        child: const Text(
+                                          'Clear All',
+                                          style: TextStyle(
+                                            color: Color(0xFF6366F1),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              // Provider 列表
+                              Flexible(
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  shrinkWrap: true,
+                                  itemCount: suggestions.length,
+                                  itemBuilder: (context, index) {
+                                    final suggestion = suggestions[index];
+                                    final isSelected = _selectedProviders
+                                        .contains(suggestion);
+                                    final isHighlighted =
+                                        _searchText.isNotEmpty &&
+                                        suggestion.toLowerCase().contains(
+                                          _searchText.toLowerCase(),
+                                        );
+
+                                    return InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          if (isSelected) {
+                                            _selectedProviders.remove(
+                                              suggestion,
+                                            );
+                                          } else {
+                                            _selectedProviders.add(suggestion);
+                                          }
+                                        });
+                                        // 重新構建 overlay 以更新選擇狀態
+                                        _showSearchSuggestionsOverlay();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        color:
+                                            isSelected
+                                                ? const Color(
+                                                  0xFF6366F1,
+                                                ).withOpacity(0.1)
+                                                : null,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              isSelected
+                                                  ? Icons.check_box
+                                                  : Icons
+                                                      .check_box_outline_blank,
+                                              size: 20,
+                                              color:
+                                                  isSelected
+                                                      ? const Color(0xFF6366F1)
+                                                      : const Color(0xFF8B949E),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Icon(
+                                              Icons.data_object,
+                                              size: 16,
+                                              color: Color(0xFF8B949E),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                suggestion,
+                                                style: TextStyle(
+                                                  color:
+                                                      isSelected
+                                                          ? const Color(
+                                                            0xFF6366F1,
+                                                          )
+                                                          : isHighlighted
+                                                          ? Colors.white
+                                                          : const Color(
+                                                            0xFFE6EDF3,
+                                                          ),
+                                                  fontSize: 13,
+                                                  fontWeight:
+                                                      isSelected
+                                                          ? FontWeight.w600
+                                                          : FontWeight.normal,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ),
     );
 
     overlay.insert(_searchOverlay!);
