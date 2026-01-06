@@ -1,6 +1,22 @@
 import 'tracker_config.dart';
 
-/// Location information for code
+/// Represents a code location in a stack trace.
+///
+/// Contains information about where in the code a particular
+/// event occurred, including file path, line number, and function name.
+///
+/// This is used to display the exact location where a provider
+/// state change was triggered.
+///
+/// Example:
+/// ```dart
+/// const location = LocationInfo(
+///   location: 'lib/main.dart:42',
+///   file: 'lib/main.dart',
+///   line: 42,
+///   function: 'main',
+/// );
+/// ```
 class LocationInfo {
   /// Full location description (file:line in function)
   final String location;
@@ -25,6 +41,10 @@ class LocationInfo {
     this.column,
   });
 
+  /// Converts this location to a JSON-serializable map
+  ///
+  /// The map includes all location information that can be sent
+  /// to the DevTools extension or logged to console.
   Map<String, dynamic> toJson() => {
     'location': location,
     'file': file,
@@ -33,11 +53,34 @@ class LocationInfo {
     if (column != null) 'column': column,
   };
 
+  /// Returns the string representation of this location
+  ///
+  /// This returns the [location] field which contains the formatted
+  /// location string (e.g., "lib/main.dart:42").
   @override
   String toString() => location;
 }
 
-/// Stack Trace Parser
+/// Parses Dart stack traces to extract code location information.
+///
+/// This parser analyzes stack traces to identify where provider
+/// state changes originated in your code, filtering out framework
+/// code to show only relevant application code.
+///
+/// The parser uses [TrackerConfig] to determine which code locations
+/// should be included or filtered out based on package prefixes and
+/// file patterns.
+///
+/// Example:
+/// ```dart
+/// final parser = StackTraceParser(
+///   TrackerConfig.forPackage('my_app'),
+/// );
+///
+/// final stackTrace = StackTrace.current;
+/// final callChain = parser.parseCallChain(stackTrace);
+/// final triggerLocation = parser.findTriggerLocation(stackTrace);
+/// ```
 class StackTraceParser {
   final TrackerConfig config;
 
@@ -49,7 +92,23 @@ class StackTraceParser {
 
   StackTraceParser(this.config);
 
-  /// Parse call chain from stack trace
+  /// Parses a complete call chain from a stack trace
+  ///
+  /// Extracts a list of [LocationInfo] representing the call stack,
+  /// filtered according to the [TrackerConfig] settings. Only includes
+  /// locations from your application code, excluding framework code.
+  ///
+  /// The list is ordered from most recent call to oldest, and is limited
+  /// to [TrackerConfig.maxCallChainDepth] entries.
+  ///
+  /// Example:
+  /// ```dart
+  /// final parser = StackTraceParser(config);
+  /// final callChain = parser.parseCallChain(StackTrace.current);
+  /// for (final location in callChain) {
+  ///   print('${location.function} at ${location.file}:${location.line}');
+  /// }
+  /// ```
   List<LocationInfo> parseCallChain(StackTrace stackTrace) {
     final lines = stackTrace.toString().split('\n');
     final chain = <LocationInfo>[];
@@ -85,7 +144,23 @@ class StackTraceParser {
     return chain;
   }
 
-  /// Find the user code location that triggered the change
+  /// Finds the most relevant user code location that triggered a state change
+  ///
+  /// Analyzes the stack trace to identify the first location in your
+  /// application code that triggered the provider change. This filters
+  /// out provider definition files and framework code to find the actual
+  /// user code that caused the state change.
+  ///
+  /// Returns `null` if no suitable location is found.
+  ///
+  /// Example:
+  /// ```dart
+  /// final parser = StackTraceParser(config);
+  /// final trigger = parser.findTriggerLocation(StackTrace.current);
+  /// if (trigger != null) {
+  ///   print('Change triggered at: ${trigger.location}');
+  /// }
+  /// ```
   LocationInfo? findTriggerLocation(StackTrace stackTrace) {
     final callChain = parseCallChain(stackTrace);
 

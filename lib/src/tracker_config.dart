@@ -121,7 +121,19 @@ class TrackerConfig {
     );
   }
 
-  /// Copy and modify config
+  /// Creates a copy of this config with the given fields replaced
+  ///
+  /// Returns a new [TrackerConfig] instance with the specified fields
+  /// updated while keeping all other fields unchanged.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = TrackerConfig.forPackage('my_app');
+  /// final prodConfig = config.copyWith(
+  ///   enableConsoleOutput: false,
+  ///   maxCallChainDepth: 5,
+  /// );
+  /// ```
   TrackerConfig copyWith({
     bool? enabled,
     List<String>? packagePrefixes,
@@ -145,7 +157,3 @@ class TrackerConfig {
     );
   }
 }
-
-
-
-

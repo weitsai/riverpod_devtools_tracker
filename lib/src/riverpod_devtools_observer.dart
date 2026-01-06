@@ -51,6 +51,18 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// 堆疊記錄的過期時間（毫秒）
   static const int _stackExpirationMs = 60000; // 60 seconds
 
+  /// Creates a new Riverpod DevTools Observer
+  ///
+  /// The [config] parameter controls tracking behavior. If not provided,
+  /// uses default settings which may not filter stack traces effectively.
+  /// It's recommended to use [TrackerConfig.forPackage] for proper filtering.
+  ///
+  /// Example:
+  /// ```dart
+  /// RiverpodDevToolsObserver(
+  ///   config: TrackerConfig.forPackage('my_app'),
+  /// )
+  /// ```
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
