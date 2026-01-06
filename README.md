@@ -1,10 +1,12 @@
 # Riverpod DevTools Tracker
 
-A powerful Flutter package that automatically tracks Riverpod state changes with detailed call stack information, helping you debug by showing exactly where state changes originated in your code.
-
-![DevTools Extension](https://img.shields.io/badge/DevTools-Extension-blue)
+[![pub package](https://img.shields.io/pub/v/riverpod_devtools_tracker.svg)](https://pub.dev/packages/riverpod_devtools_tracker)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
+[![style: flutter lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
+
+A powerful Flutter package that automatically tracks Riverpod state changes with detailed call stack information, helping you debug by showing exactly where state changes originated in your code.
 
 **[繁體中文](README.zh-TW.md)** | English
 

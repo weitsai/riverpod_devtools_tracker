@@ -1,10 +1,12 @@
 # Riverpod DevTools Tracker
 
-一個強大的 Flutter 套件，能自動追蹤 Riverpod 狀態變化並提供詳細的調用堆疊資訊，幫助你精確定位狀態變化的程式碼來源，讓除錯更輕鬆。
-
-![DevTools Extension](https://img.shields.io/badge/DevTools-Extension-blue)
+[![pub package](https://img.shields.io/pub/v/riverpod_devtools_tracker.svg)](https://pub.dev/packages/riverpod_devtools_tracker)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
+[![style: flutter lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
+
+一個強大的 Flutter 套件，能自動追蹤 Riverpod 狀態變化並提供詳細的調用堆疊資訊，幫助你精確定位狀態變化的程式碼來源，讓除錯更輕鬆。
 
 繁體中文 | **[English](README.md)**
 
