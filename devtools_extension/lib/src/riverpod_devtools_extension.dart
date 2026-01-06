@@ -35,6 +35,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   bool _showAllHistory = true;
   VoidCallback? _connectionListener;
 
+  // Cache filtered providers to avoid recomputation
+  List<ProviderStateInfo>? _cachedFilteredProviders;
+  bool _filterCacheInvalid = true;
+
   // Filter by change type
   final Set<String> _selectedChangeTypes = {
     'add',
@@ -140,6 +144,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
         if (_providerStates.length > 500) {
           _providerStates.removeLast();
         }
+
+        // Invalidate cache since data changed
+        _invalidateFilterCache();
       });
     } catch (e) {
       debugPrint('Error parsing state change: $e');
@@ -147,6 +154,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   List<ProviderStateInfo> get _filteredProviders {
+    // Return cached result if valid
+    if (!_filterCacheInvalid && _cachedFilteredProviders != null) {
+      return _cachedFilteredProviders!;
+    }
+
     var states =
         _showAllHistory ? _providerStates : _latestStates.values.toList();
 
@@ -184,7 +196,18 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               .toList();
     }
 
-    return states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final result = states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    // Cache the result
+    _cachedFilteredProviders = result;
+    _filterCacheInvalid = false;
+
+    return result;
+  }
+
+  /// Invalidate filter cache
+  void _invalidateFilterCache() {
+    _filterCacheInvalid = true;
   }
 
   /// Check if this is an async value update (FutureProvider/StreamProvider/AsyncNotifierProvider)
@@ -349,6 +372,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                         onDeleted: () {
                           setState(() {
                             _selectedProviders.remove(provider);
+                            _invalidateFilterCache();
                           });
                         },
                       );
@@ -398,6 +422,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                               onPressed: () {
                                 setState(() {
                                   _selectedProviders.clear();
+                                  _invalidateFilterCache();
                                 });
                               },
                             ),
@@ -443,7 +468,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               FilterChip(
                 label: Text(_showAllHistory ? l10n.allHistory : l10n.latestOnly),
                 selected: _showAllHistory,
-                onSelected: (value) => setState(() => _showAllHistory = value),
+                onSelected: (value) => setState(() {
+                  _showAllHistory = value;
+                  _invalidateFilterCache();
+                }),
                 selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
@@ -718,6 +746,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           } else {
             _selectedChangeTypes.add(type);
           }
+          _invalidateFilterCache();
         });
         // Rebuild overlay to update UI
         _rebuildFilterOverlay();
@@ -769,6 +798,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       onTap: () {
         setState(() {
           _hideAutoComputed = !_hideAutoComputed;
+          _invalidateFilterCache();
         });
         // Rebuild overlay to update UI
         _rebuildFilterOverlay();
@@ -888,6 +918,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                         onPressed: () {
                                           setState(() {
                                             _selectedProviders.clear();
+                                            _invalidateFilterCache();
                                           });
                                         },
                                         child: Text(
@@ -929,6 +960,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                           } else {
                                             _selectedProviders.add(suggestion);
                                           }
+                                          _invalidateFilterCache();
                                         });
                                         // Rebuild overlay to update selection state
                                         _showSearchSuggestionsOverlay();
