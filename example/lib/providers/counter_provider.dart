@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'counter_provider.g.dart';
 
-/// 簡單的計數器 Notifier - 展示基本的狀態變化追蹤
+/// Simple counter Notifier - demonstrates basic state change tracking
 @riverpod
 class Counter extends _$Counter {
   @override
@@ -13,14 +13,14 @@ class Counter extends _$Counter {
   void reset() => state = 0;
 }
 
-/// 計數器倍數 Provider - 展示依賴其他 Provider 的情況
+/// Counter double Provider - demonstrates dependency on other Providers
 @riverpod
 int counterDouble(ref) {
   final count = ref.watch(counterProvider);
   return count * 2;
 }
 
-/// 計數器是否為偶數 Provider
+/// Counter is even Provider
 @riverpod
 bool isEven(ref) {
   final count = ref.watch(counterProvider);

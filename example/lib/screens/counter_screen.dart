@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 
 import '../providers/counter_provider.dart';
 
@@ -8,22 +9,23 @@ class CounterScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final count = ref.watch(counterProvider);
     final doubleCount = ref.watch(counterDoubleProvider);
     final isEven = ref.watch(isEvenProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('計數器範例'),
+        title: Text(l10n.counterScreenTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '當前計數:',
-              style: TextStyle(fontSize: 20),
+            Text(
+              l10n.currentCount,
+              style: const TextStyle(fontSize: 20),
             ),
             const SizedBox(height: 8),
             Text(
@@ -40,9 +42,9 @@ class CounterScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildInfoRow('倍數值', '$doubleCount'),
+                    _buildInfoRow(l10n.doubleValue, '$doubleCount'),
                     const Divider(height: 24),
-                    _buildInfoRow('是否為偶數', isEven ? '是' : '否'),
+                    _buildInfoRow(l10n.isEven, isEven ? l10n.yes : l10n.no),
                   ],
                 ),
               ),
@@ -54,14 +56,14 @@ class CounterScreen extends ConsumerWidget {
                 FloatingActionButton(
                   heroTag: 'decrement',
                   onPressed: () => _decrementCounter(ref),
-                  tooltip: '減少',
+                  tooltip: l10n.decrease,
                   child: const Icon(Icons.remove),
                 ),
                 const SizedBox(width: 16),
                 FloatingActionButton(
                   heroTag: 'increment',
                   onPressed: () => _incrementCounter(ref),
-                  tooltip: '增加',
+                  tooltip: l10n.increase,
                   child: const Icon(Icons.add),
                 ),
               ],
@@ -69,7 +71,7 @@ class CounterScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _resetCounter(ref),
-              child: const Text('重置'),
+              child: Text(l10n.reset),
             ),
           ],
         ),
@@ -96,7 +98,7 @@ class CounterScreen extends ConsumerWidget {
     );
   }
 
-  // 這些方法的調用會被 DevTools 追蹤到
+  // These method calls will be tracked by DevTools
   void _incrementCounter(WidgetRef ref) {
     ref.read(counterProvider.notifier).increment();
   }

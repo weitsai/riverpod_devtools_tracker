@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 
 import '../providers/todo_provider.dart';
 
@@ -8,13 +9,14 @@ class TodoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final todos = ref.watch(todoListProvider);
     final completedCount = ref.watch(completedTodoCountProvider);
     final activeCount = ref.watch(activeTodoCountProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('待辦事項範例'),
+        title: Text(l10n.todoScreenTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Column(
@@ -22,11 +24,11 @@ class TodoScreen extends ConsumerWidget {
           _buildStatistics(completedCount, activeCount),
           Expanded(
             child: todos.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      '目前沒有待辦事項\n點擊下方按鈕新增',
+                      l10n.noTodosMessage,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
                       ),
@@ -46,7 +48,7 @@ class TodoScreen extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _clearCompleted(ref),
                 icon: const Icon(Icons.clear_all),
-                label: const Text('清除已完成'),
+                label: Text(l10n.clearCompleted),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -57,30 +59,35 @@ class TodoScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTodoDialog(context, ref),
-        tooltip: '新增待辦事項',
+        tooltip: l10n.addTodo,
         child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildStatistics(int completedCount, int activeCount) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildStatItem('待完成', activeCount, Colors.orange),
-            Container(
-              width: 1,
-              height: 40,
-              color: Colors.grey[300],
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Card(
+          margin: const EdgeInsets.all(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(l10n.pending, activeCount, Colors.orange),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.grey[300],
+                ),
+                _buildStatItem(l10n.completed, completedCount, Colors.green),
+              ],
             ),
-            _buildStatItem('已完成', completedCount, Colors.green),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -131,47 +138,48 @@ class TodoScreen extends ConsumerWidget {
   }
 
   void _showAddTodoDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('新增待辦事項'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.addTodoDialogTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: '事項內容',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.todoContent,
+            border: const OutlineInputBorder(),
           ),
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
               _addTodo(ref, value.trim());
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
             }
           },
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               final text = controller.text.trim();
               if (text.isNotEmpty) {
                 _addTodo(ref, text);
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               }
             },
-            child: const Text('新增'),
+            child: Text(l10n.add),
           ),
         ],
       ),
     );
   }
 
-  // 這些方法會觸發狀態變化，並被 DevTools 追蹤
+  // These methods will trigger state changes and be tracked by DevTools
   void _addTodo(WidgetRef ref, String title) {
     ref.read(todoListProvider.notifier).addTodo(title);
   }

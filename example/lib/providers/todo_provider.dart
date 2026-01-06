@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'todo_provider.g.dart';
 
-/// 待辦事項模型
+/// Todo item model
 class Todo {
   final String id;
   final String title;
@@ -30,7 +30,7 @@ class Todo {
   String toString() => 'Todo(id: $id, title: $title, completed: $completed)';
 }
 
-/// 待辦事項列表 Notifier - 展示列表的增刪改
+/// Todo list Notifier - demonstrates list CRUD operations
 @riverpod
 class TodoList extends _$TodoList {
   @override
@@ -65,14 +65,14 @@ class TodoList extends _$TodoList {
   }
 }
 
-/// 已完成的待辦事項數量
+/// Completed todo count
 @riverpod
 int completedTodoCount(Ref ref) {
   final todos = ref.watch(todoListProvider);
   return todos.where((todo) => todo.completed).length;
 }
 
-/// 未完成的待辦事項數量
+/// Active todo count
 @riverpod
 int activeTodoCount(Ref ref) {
   final todos = ref.watch(todoListProvider);

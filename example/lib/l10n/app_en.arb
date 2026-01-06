@@ -1,0 +1,282 @@
+{
+  "@@locale": "en",
+  "appTitle": "Riverpod DevTools Tracker Demo",
+  "@appTitle": {
+    "description": "Application title"
+  },
+
+  "homeTitle": "Riverpod DevTools Tracker Example",
+  "@homeTitle": {
+    "description": "Home screen title"
+  },
+
+  "usageInstructions": "🔍 Usage Instructions",
+  "@usageInstructions": {
+    "description": "Usage instructions header"
+  },
+
+  "instruction1": "1. Click the example cards below to enter each demo page",
+  "@instruction1": {
+    "description": "First instruction"
+  },
+
+  "instruction2": "2. Interact with UI components to trigger state changes",
+  "@instruction2": {
+    "description": "Second instruction"
+  },
+
+  "instruction3": "3. Open DevTools extension to view detailed state change tracking",
+  "@instruction3": {
+    "description": "Third instruction"
+  },
+
+  "instruction4": "4. You can see the exact code location and call stack that triggered the change",
+  "@instruction4": {
+    "description": "Fourth instruction"
+  },
+
+  "counterExampleTitle": "Counter Example",
+  "@counterExampleTitle": {
+    "description": "Counter example card title"
+  },
+
+  "counterExampleDesc": "Demonstrates basic state change tracking\nIncludes counter and its derived states",
+  "@counterExampleDesc": {
+    "description": "Counter example card description"
+  },
+
+  "userExampleTitle": "User Data Example",
+  "@userExampleTitle": {
+    "description": "User example card title"
+  },
+
+  "userExampleDesc": "Demonstrates complex object state changes\nTracks login status and profile updates",
+  "@userExampleDesc": {
+    "description": "User example card description"
+  },
+
+  "asyncExampleTitle": "Async Data Example",
+  "@asyncExampleTitle": {
+    "description": "Async example card title"
+  },
+
+  "asyncExampleDesc": "Demonstrates AsyncValue state tracking\nIncludes loading, success, and error states",
+  "@asyncExampleDesc": {
+    "description": "Async example card description"
+  },
+
+  "todoExampleTitle": "Todo List Example",
+  "@todoExampleTitle": {
+    "description": "Todo example card title"
+  },
+
+  "todoExampleDesc": "Demonstrates list CRUD operation tracking\nComplete CRUD operations demonstration",
+  "@todoExampleDesc": {
+    "description": "Todo example card description"
+  },
+
+  "counterScreenTitle": "Counter Example",
+  "@counterScreenTitle": {
+    "description": "Counter screen title"
+  },
+
+  "currentCount": "Current Count:",
+  "@currentCount": {
+    "description": "Current count label"
+  },
+
+  "doubleValue": "Double Value",
+  "@doubleValue": {
+    "description": "Double value label"
+  },
+
+  "isEven": "Is Even",
+  "@isEven": {
+    "description": "Is even label"
+  },
+
+  "yes": "Yes",
+  "@yes": {
+    "description": "Yes"
+  },
+
+  "no": "No",
+  "@no": {
+    "description": "No"
+  },
+
+  "decrease": "Decrease",
+  "@decrease": {
+    "description": "Decrease button tooltip"
+  },
+
+  "increase": "Increase",
+  "@increase": {
+    "description": "Increase button tooltip"
+  },
+
+  "reset": "Reset",
+  "@reset": {
+    "description": "Reset button"
+  },
+
+  "userScreenTitle": "User Data Example",
+  "@userScreenTitle": {
+    "description": "User screen title"
+  },
+
+  "loggedIn": "Logged In",
+  "@loggedIn": {
+    "description": "Logged in status"
+  },
+
+  "notLoggedIn": "Not Logged In",
+  "@notLoggedIn": {
+    "description": "Not logged in status"
+  },
+
+  "name": "Name",
+  "@name": {
+    "description": "Name label"
+  },
+
+  "age": "Age",
+  "@age": {
+    "description": "Age label"
+  },
+
+  "email": "Email",
+  "@email": {
+    "description": "Email label"
+  },
+
+  "login": "Login",
+  "@login": {
+    "description": "Login button"
+  },
+
+  "changeName": "Change Name",
+  "@changeName": {
+    "description": "Change name button"
+  },
+
+  "increaseAge": "Increase Age",
+  "@increaseAge": {
+    "description": "Increase age button"
+  },
+
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout button"
+  },
+
+  "changeNameDialogTitle": "Change Name",
+  "@changeNameDialogTitle": {
+    "description": "Change name dialog title"
+  },
+
+  "newName": "New Name",
+  "@newName": {
+    "description": "New name input label"
+  },
+
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm button"
+  },
+
+  "asyncScreenTitle": "Async Data Example",
+  "@asyncScreenTitle": {
+    "description": "Async screen title"
+  },
+
+  "futureProviderExample": "FutureProvider Example",
+  "@futureProviderExample": {
+    "description": "FutureProvider section title"
+  },
+
+  "loadingSuccess": "Loading Success",
+  "@loadingSuccess": {
+    "description": "Loading success status"
+  },
+
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading status"
+  },
+
+  "loadingFailed": "Loading Failed",
+  "@loadingFailed": {
+    "description": "Loading failed status"
+  },
+
+  "reloadInvalidate": "Reload (invalidate)",
+  "@reloadInvalidate": {
+    "description": "Reload button for FutureProvider"
+  },
+
+  "stateNotifierAsyncExample": "StateNotifier + AsyncValue Example",
+  "@stateNotifierAsyncExample": {
+    "description": "StateNotifier section title"
+  },
+
+  "refreshData": "Refresh Data",
+  "@refreshData": {
+    "description": "Refresh data button"
+  },
+
+  "todoScreenTitle": "Todo List Example",
+  "@todoScreenTitle": {
+    "description": "Todo screen title"
+  },
+
+  "noTodosMessage": "No todos yet\nClick the button below to add",
+  "@noTodosMessage": {
+    "description": "Empty todos message"
+  },
+
+  "clearCompleted": "Clear Completed",
+  "@clearCompleted": {
+    "description": "Clear completed button"
+  },
+
+  "addTodo": "Add Todo",
+  "@addTodo": {
+    "description": "Add todo button tooltip"
+  },
+
+  "pending": "Pending",
+  "@pending": {
+    "description": "Pending todos label"
+  },
+
+  "completed": "Completed",
+  "@completed": {
+    "description": "Completed todos label"
+  },
+
+  "addTodoDialogTitle": "Add Todo",
+  "@addTodoDialogTitle": {
+    "description": "Add todo dialog title"
+  },
+
+  "todoContent": "Todo Content",
+  "@todoContent": {
+    "description": "Todo content input label"
+  },
+
+  "add": "Add",
+  "@add": {
+    "description": "Add button"
+  },
+
+  "defaultUserName": "John Doe",
+  "@defaultUserName": {
+    "description": "Default user name for demo"
+  }
+}

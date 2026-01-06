@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 
 import '../providers/user_provider.dart';
 
@@ -8,12 +9,13 @@ class UserScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(userDataProvider);
     final isLoggedIn = ref.watch(isLoggedInProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('使用者資料範例'),
+        title: Text(l10n.userScreenTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Padding(
@@ -35,7 +37,7 @@ class UserScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          isLoggedIn ? '已登入' : '未登入',
+                          isLoggedIn ? l10n.loggedIn : l10n.notLoggedIn,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -45,11 +47,11 @@ class UserScreen extends ConsumerWidget {
                     ),
                     if (user != null) ...[
                       const Divider(height: 24),
-                      _buildUserInfo('姓名', user.name),
+                      _buildUserInfo(l10n.name, user.name),
                       const SizedBox(height: 8),
-                      _buildUserInfo('年齡', '${user.age}'),
+                      _buildUserInfo(l10n.age, '${user.age}'),
                       const SizedBox(height: 8),
-                      _buildUserInfo('Email', user.email),
+                      _buildUserInfo(l10n.email, user.email),
                     ],
                   ],
                 ),
@@ -58,9 +60,9 @@ class UserScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             if (!isLoggedIn) ...[
               ElevatedButton.icon(
-                onPressed: () => _login(ref),
+                onPressed: () => _login(ref, context),
                 icon: const Icon(Icons.login),
-                label: const Text('登入'),
+                label: Text(l10n.login),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
@@ -69,7 +71,7 @@ class UserScreen extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => _updateUserName(ref, context),
                 icon: const Icon(Icons.edit),
-                label: const Text('更改姓名'),
+                label: Text(l10n.changeName),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
@@ -78,7 +80,7 @@ class UserScreen extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => _incrementAge(ref),
                 icon: const Icon(Icons.cake),
-                label: const Text('增加年齡'),
+                label: Text(l10n.increaseAge),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
@@ -87,7 +89,7 @@ class UserScreen extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => _logout(ref),
                 icon: const Icon(Icons.logout),
-                label: const Text('登出'),
+                label: Text(l10n.logout),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                   backgroundColor: Colors.red,
@@ -126,13 +128,14 @@ class UserScreen extends ConsumerWidget {
     );
   }
 
-  // 這些方法會觸發狀態變化，並被 DevTools 追蹤
-  void _login(WidgetRef ref) {
+  // These methods will trigger state changes and be tracked by DevTools
+  void _login(WidgetRef ref, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     ref.read(userDataProvider.notifier).login(
-      const User(
-        name: '張小明',
+      User(
+        name: l10n.defaultUserName,
         age: 25,
-        email: 'ming@example.com',
+        email: 'user@example.com',
       ),
     );
   }
@@ -146,6 +149,7 @@ class UserScreen extends ConsumerWidget {
   }
 
   void _updateUserName(WidgetRef ref, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final currentUser = ref.read(userDataProvider);
     if (currentUser == null) return;
 
@@ -153,26 +157,26 @@ class UserScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('更改姓名'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.changeNameDialogTitle),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: '新姓名',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.newName,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               ref.read(userDataProvider.notifier).updateName(controller.text);
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
             },
-            child: const Text('確定'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),

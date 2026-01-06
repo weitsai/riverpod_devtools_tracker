@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import 'counter_screen.dart';
 import 'user_screen.dart';
@@ -10,9 +11,11 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riverpod DevTools Tracker 範例'),
+        title: Text(l10n.homeTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: ListView(
@@ -22,8 +25,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildExampleCard(
             context,
-            title: '計數器範例',
-            description: '展示基本的狀態變化追蹤\n包含計數器及其衍生狀態',
+            title: l10n.counterExampleTitle,
+            description: l10n.counterExampleDesc,
             icon: Icons.add_circle_outline,
             color: Colors.blue,
             onTap: () => _navigateTo(context, const CounterScreen()),
@@ -31,8 +34,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildExampleCard(
             context,
-            title: '使用者資料範例',
-            description: '展示複雜物件的狀態變化\n追蹤登入狀態和個人資料更新',
+            title: l10n.userExampleTitle,
+            description: l10n.userExampleDesc,
             icon: Icons.person_outline,
             color: Colors.green,
             onTap: () => _navigateTo(context, const UserScreen()),
@@ -40,8 +43,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildExampleCard(
             context,
-            title: '非同步資料範例',
-            description: '展示 AsyncValue 的狀態追蹤\n包含載入、成功、錯誤狀態',
+            title: l10n.asyncExampleTitle,
+            description: l10n.asyncExampleDesc,
             icon: Icons.cloud_download_outlined,
             color: Colors.orange,
             onTap: () => _navigateTo(context, const AsyncDataScreen()),
@@ -49,8 +52,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildExampleCard(
             context,
-            title: '待辦事項範例',
-            description: '展示列表的增刪改操作追蹤\n完整的 CRUD 操作示範',
+            title: l10n.todoExampleTitle,
+            description: l10n.todoExampleDesc,
             icon: Icons.checklist_outlined,
             color: Colors.purple,
             onTap: () => _navigateTo(context, const TodoScreen()),
@@ -61,35 +64,32 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '🔍 使用說明',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.usageInstructions,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildInstruction(l10n.instruction1),
+                _buildInstruction(l10n.instruction2),
+                _buildInstruction(l10n.instruction3),
+                _buildInstruction(l10n.instruction4),
+              ],
             ),
-            const SizedBox(height: 12),
-            _buildInstruction(
-              '1. 點擊下方的範例卡片進入各個示範頁面',
-            ),
-            _buildInstruction(
-              '2. 操作 UI 元件觸發狀態變化',
-            ),
-            _buildInstruction(
-              '3. 打開 DevTools 擴展查看詳細的狀態變化追蹤',
-            ),
-            _buildInstruction(
-              '4. 可以看到觸發變化的確切代碼位置和調用堆疊',
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

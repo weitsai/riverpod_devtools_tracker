@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_provider.g.dart';
 
-/// 使用者資料模型
+/// User data model
 class User {
   final String name;
   final int age;
@@ -30,7 +30,7 @@ class User {
   String toString() => 'User(name: $name, age: $age, email: $email)';
 }
 
-/// 使用者 Notifier - 展示複雜物件的狀態變化
+/// User Notifier - demonstrates complex object state changes
 @riverpod
 class UserData extends _$UserData {
   @override
@@ -52,7 +52,7 @@ class UserData extends _$UserData {
   }
 }
 
-/// 是否已登入 Provider
+/// Is logged in Provider
 @riverpod
 bool isLoggedIn(ref) {
   final user = ref.watch(userDataProvider);
