@@ -1,0 +1,159 @@
+{
+  "@@locale": "en",
+  "appTitle": "Riverpod State Inspector",
+  "@appTitle": {
+    "description": "The title of the DevTools extension"
+  },
+  "connected": "Connected",
+  "@connected": {
+    "description": "Connection status - connected"
+  },
+  "disconnected": "Disconnected",
+  "@disconnected": {
+    "description": "Connection status - disconnected"
+  },
+  "clearHistory": "Clear History",
+  "@clearHistory": {
+    "description": "Button to clear state change history"
+  },
+  "filterProviders": "Filter Providers...",
+  "@filterProviders": {
+    "description": "Placeholder text for filter input"
+  },
+  "allHistory": "All History",
+  "@allHistory": {
+    "description": "Filter chip label for showing all history"
+  },
+  "latestOnly": "Latest Only",
+  "@latestOnly": {
+    "description": "Filter chip label for showing latest changes only"
+  },
+  "filterChangeTypes": "Filter Change Types",
+  "@filterChangeTypes": {
+    "description": "Header for change type filter menu"
+  },
+  "changeTypeAdd": "Add",
+  "@changeTypeAdd": {
+    "description": "Change type - add"
+  },
+  "changeTypeUpdate": "Update",
+  "@changeTypeUpdate": {
+    "description": "Change type - update"
+  },
+  "changeTypeDispose": "Dispose",
+  "@changeTypeDispose": {
+    "description": "Change type - dispose"
+  },
+  "changeTypeError": "Error",
+  "@changeTypeError": {
+    "description": "Change type - error"
+  },
+  "changesCount": "{count} changes",
+  "@changesCount": {
+    "description": "Number of state changes",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "connectingToApp": "Connecting to application...",
+  "@connectingToApp": {
+    "description": "Loading message when connecting"
+  },
+  "makeSureAppRunning": "Make sure your app is running with RiverpodDevToolsObserver",
+  "@makeSureAppRunning": {
+    "description": "Instruction message for connection"
+  },
+  "noStateChangesYet": "No state changes yet",
+  "@noStateChangesYet": {
+    "description": "Empty state message"
+  },
+  "providerStateChangesWillAppearHere": "Provider state changes will appear here",
+  "@providerStateChangesWillAppearHere": {
+    "description": "Empty state description"
+  },
+  "selectProviderToViewDetails": "Select a provider to view details",
+  "@selectProviderToViewDetails": {
+    "description": "Message when no provider is selected"
+  },
+  "changeSource": "Change Source",
+  "@changeSource": {
+    "description": "Section title for change source location"
+  },
+  "callChain": "Call Chain",
+  "@callChain": {
+    "description": "Section title for call chain"
+  },
+  "stackTrace": "Stack Trace",
+  "@stackTrace": {
+    "description": "Section title for stack trace"
+  },
+  "stateChange": "State Change",
+  "@stateChange": {
+    "description": "Section title for state change comparison"
+  },
+  "before": "Before",
+  "@before": {
+    "description": "Label for previous state value"
+  },
+  "after": "After",
+  "@after": {
+    "description": "Label for current state value"
+  },
+  "expand": "Expand",
+  "@expand": {
+    "description": "Button to expand collapsed content"
+  },
+  "collapse": "Collapse",
+  "@collapse": {
+    "description": "Button to collapse expanded content"
+  },
+  "copyLocation": "Copy location",
+  "@copyLocation": {
+    "description": "Tooltip for copy location button"
+  },
+  "itemsCount": "{count} items",
+  "@itemsCount": {
+    "description": "Number of items in a list",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "selectProviders": "Select Providers",
+  "@selectProviders": {
+    "description": "Header for provider selection menu"
+  },
+  "clearAll": "Clear All",
+  "@clearAll": {
+    "description": "Button to clear all selections"
+  },
+  "clearAllFilters": "Clear All Filters",
+  "@clearAllFilters": {
+    "description": "Tooltip for clearing all filters"
+  },
+  "showAutoComputed": "Show auto-computed",
+  "@showAutoComputed": {
+    "description": "Toggle label to show auto-computed updates"
+  },
+  "hideAutoComputed": "Hide auto-computed",
+  "@hideAutoComputed": {
+    "description": "Toggle label to hide auto-computed updates"
+  },
+  "derivedProviderUpdates": "Derived provider updates",
+  "@derivedProviderUpdates": {
+    "description": "Description for auto-computed toggle"
+  },
+  "autoComputed": "auto-computed",
+  "@autoComputed": {
+    "description": "Label for auto-computed provider updates"
+  },
+  "clickToExpandFullContent": "Click to expand full content...",
+  "@clickToExpandFullContent": {
+    "description": "Hint text to expand collapsed value"
+  }
+}

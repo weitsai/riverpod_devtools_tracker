@@ -133,7 +133,7 @@ class ProviderStateInfo {
     final loadingWithValueMatch = loadingWithValuePattern.firstMatch(value);
     if (loadingWithValueMatch != null) {
       final innerValue = loadingWithValueMatch.group(2);
-      return '⏳ Loading... (前值: $innerValue)';
+      return '⏳ Loading... (prev: $innerValue)';
     }
 
     // AsyncLoading empty pattern: AsyncLoading<Type>()

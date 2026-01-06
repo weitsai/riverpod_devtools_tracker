@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../models/provider_state_info.dart';
 
 class StateDetailPanel extends StatefulWidget {
@@ -17,7 +18,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
   ProviderStateInfo get stateInfo => widget.stateInfo;
 
-  // 預設收起時最多顯示的字元數
+  // Default maximum characters to display when collapsed
   static const int _collapsedMaxLength = 200;
 
   @override
@@ -127,7 +128,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
         stateInfo.location != null || stateInfo.locationFile != null;
     final hasCallChain = stateInfo.callChain.isNotEmpty;
 
-    // 如果既沒有 location 也沒有 call chain，不顯示任何內容
+    // If neither location nor call chain, show nothing
     if (!hasExplicitLocation && !hasCallChain) {
       return const SizedBox.shrink();
     }
@@ -144,15 +145,15 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Change Source 區塊（當有 explicit location 時顯示）
+          // Change Source block (shown when explicit location exists)
           if (hasExplicitLocation) ...[
-            const Row(
+            Row(
               children: [
-                Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
-                SizedBox(width: 8),
+                const Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
+                const SizedBox(width: 8),
                 Text(
-                  'Change Source',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.changeSource,
+                  style: const TextStyle(
                     color: Color(0xFF3FB950),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -192,22 +193,22 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                           '${triggerLocation?.file}:${triggerLocation?.line}';
                       Clipboard.setData(ClipboardData(text: text));
                     },
-                    tooltip: 'Copy location',
+                    tooltip: AppLocalizations.of(context)!.copyLocation,
                   ),
                 ],
               ),
             ),
           ],
-          // Call Chain 區塊（當有 call chain 時顯示）
+          // Call Chain block (shown when call chain exists)
           if (hasCallChain) ...[
             if (hasExplicitLocation) const SizedBox(height: 20),
             Row(
               children: [
                 const Icon(Icons.layers, color: Color(0xFF3FB950), size: 18),
                 const SizedBox(width: 8),
-                const Text(
-                  'Call Chain',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.callChain,
+                  style: const TextStyle(
                     color: Color(0xFF3FB950),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -215,7 +216,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                 ),
                 const Spacer(),
                 Text(
-                  '${stateInfo.callChain.length} items',
+                  AppLocalizations.of(context)!.itemsCount(stateInfo.callChain.length),
                   style: const TextStyle(
                     color: Color(0xFF8B949E),
                     fontSize: 12,
@@ -248,13 +249,13 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.compare_arrows, color: Color(0xFF8B949E), size: 18),
-              SizedBox(width: 8),
+              const Icon(Icons.compare_arrows, color: Color(0xFF8B949E), size: 18),
+              const SizedBox(width: 8),
               Text(
-                'State Change',
-                style: TextStyle(
+                AppLocalizations.of(context)!.stateChange,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -268,7 +269,8 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
             children: [
               Expanded(
                 child: _buildValueBox(
-                  'Before',
+                  context,
+                  AppLocalizations.of(context)!.before,
                   stateInfo.formattedPreviousValue,
                   const Color(0xFFF85149),
                   isExpanded: _isBeforeExpanded,
@@ -282,7 +284,8 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               ),
               Expanded(
                 child: _buildValueBox(
-                  'After',
+                  context,
+                  AppLocalizations.of(context)!.after,
                   stateInfo.formattedCurrentValue,
                   const Color(0xFF3FB950),
                   isExpanded: _isAfterExpanded,
@@ -298,12 +301,14 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
   }
 
   Widget _buildValueBox(
+    BuildContext context,
     String label,
     String value,
     Color labelColor, {
     required bool isExpanded,
     required VoidCallback onToggle,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final needsExpand = value.length > _collapsedMaxLength;
     final displayValue = !needsExpand || isExpanded
         ? value
@@ -342,7 +347,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          isExpanded ? '收起' : '展開',
+                          isExpanded ? l10n.collapse : l10n.expand,
                           style: const TextStyle(
                             color: Color(0xFF58A6FF),
                             fontSize: 11,
@@ -398,9 +403,9 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                         color: const Color(0xFF58A6FF).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text(
-                        '點擊展開完整內容...',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.clickToExpandFullContent,
+                        style: const TextStyle(
                           color: Color(0xFF58A6FF),
                           fontSize: 11,
                         ),
@@ -422,7 +427,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
     final hasExplicitLocation =
         stateInfo.location != null || stateInfo.locationFile != null;
 
-    // 如果沒有明確的 location，call chain 已經在上面顯示了，就不用再顯示
+    // If no explicit location, call chain already shown above, no need to show again
     if (!hasExplicitLocation && hasCallChain) {
       return const SizedBox.shrink();
     }
@@ -444,7 +449,9 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               const Icon(Icons.layers, color: Color(0xFF8B949E), size: 18),
               const SizedBox(width: 8),
               Text(
-                hasCallChain ? 'Call Chain' : 'Stack Trace',
+                hasCallChain
+                    ? AppLocalizations.of(context)!.callChain
+                    : AppLocalizations.of(context)!.stackTrace,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -453,7 +460,11 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               ),
               const Spacer(),
               Text(
-                '${hasCallChain ? stateInfo.callChain.length : stateInfo.stackTrace.length} items',
+                AppLocalizations.of(context)!.itemsCount(
+                  hasCallChain
+                      ? stateInfo.callChain.length
+                      : stateInfo.stackTrace.length,
+                ),
                 style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
               ),
             ],

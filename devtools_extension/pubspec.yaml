@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   devtools_extensions: ^0.3.1
   devtools_app_shared: ^0.3.1
   vm_service: ^14.0.0
@@ -20,4 +23,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 

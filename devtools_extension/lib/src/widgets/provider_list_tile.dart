@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../models/provider_state_info.dart';
 
-/// Diff 結果
+/// Diff result
 class _DiffResult {
   final String previous;
   final String current;
@@ -133,7 +134,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                     ),
                   ],
                 ),
-                // 顯示狀態變化預覽
+                // Show state change preview
                 if (stateInfo.changeType == 'update' ||
                     stateInfo.changeType == 'add') ...[
                   const SizedBox(height: 8),
@@ -175,7 +176,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'auto-computed',
+                        AppLocalizations.of(context)!.autoComputed,
                         style: TextStyle(
                           color: const Color(0xFF8B949E).withValues(alpha: 0.7),
                           fontSize: 11,
@@ -193,9 +194,9 @@ class _ProviderListTileState extends State<ProviderListTile> {
     );
   }
 
-  /// 構建值變化預覽
+  /// Build value change preview
   Widget _buildValueChangePreview() {
-    // 對於 add 類型，只顯示當前值
+    // For 'add' type, only show current value
     if (stateInfo.changeType == 'add') {
       final currValueShort = _formatPreviewValue(stateInfo.currentValue);
       final currValueFull = _formatFullValue(stateInfo.currentValue);
@@ -253,7 +254,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       );
     }
 
-    // 對於 update 類型，嘗試智能 diff 顯示
+    // For 'update' type, try smart diff display
     final diffResult = _extractDiff(
       stateInfo.previousValue,
       stateInfo.currentValue,
@@ -266,7 +267,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
     final needsExpand = fullDiffResult.previous.length > diffResult.previous.length ||
         fullDiffResult.current.length > diffResult.current.length;
 
-    // 如果不需要箭頭（已經是 diff 格式），直接顯示差異
+    // If no arrow needed (already in diff format), show diff directly
     if (!diffResult.showArrow) {
       return GestureDetector(
         onTap: needsExpand
@@ -378,16 +379,16 @@ class _ProviderListTileState extends State<ProviderListTile> {
     );
   }
 
-  /// 提取兩個值之間的差異
+  /// Extract differences between two values
   _DiffResult _extractDiff(dynamic prev, dynamic curr, {bool expanded = false}) {
-    // 提取實際值（處理 {type, value} 格式）
+    // Extract actual values (handle {type, value} format)
     final prevExtracted = _extractValue(prev);
     final currExtracted = _extractValue(curr);
 
-    // 根據 expanded 決定截斷長度
+    // Decide truncate length based on expanded
     String truncateVal(dynamic val) => expanded ? val.toString() : _truncate(val);
 
-    // 如果都是 Map，找出變化的字段
+    // If both are Maps, find changed fields
     if (prevExtracted is Map && currExtracted is Map) {
       final changes = <String>[];
       final allKeys = {...prevExtracted.keys, ...currExtracted.keys};
@@ -401,7 +402,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       }
 
       if (changes.isNotEmpty) {
-        // 只顯示變化的部分
+        // Only show changed parts
         final displayChanges = expanded ? changes : changes.take(2).toList();
         final changeStr = displayChanges.join(expanded ? '\n' : ', ');
         final suffix = !expanded && changes.length > 2 ? ', ...' : '';
@@ -413,11 +414,11 @@ class _ProviderListTileState extends State<ProviderListTile> {
       }
     }
 
-    // 如果是相同類型的物件字串 (如 User(...))，嘗試解析差異
+    // If same type object strings (e.g. User(...)), try parsing diff
     final prevStr = prevExtracted.toString();
     final currStr = currExtracted.toString();
 
-    // 檢查是否是 ClassName(...) 格式
+    // Check if it's ClassName(...) format
     final classPattern = RegExp(r'^(\w+)\((.*)\)$');
     final prevMatch = classPattern.firstMatch(prevStr);
     final currMatch = classPattern.firstMatch(currStr);
@@ -427,7 +428,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       final currClass = currMatch.group(1);
 
       if (prevClass == currClass) {
-        // 同一個類別，解析並比較屬性
+        // Same class, parse and compare properties
         final prevProps = _parseProperties(prevMatch.group(2) ?? '');
         final currProps = _parseProperties(currMatch.group(2) ?? '');
 
@@ -455,17 +456,17 @@ class _ProviderListTileState extends State<ProviderListTile> {
       }
     }
 
-    // 預設：直接顯示截斷後的值
+    // Default: show truncated values directly
     return _DiffResult(
       previous: expanded ? _formatFullValue(prev) : _formatPreviewValue(prev),
       current: expanded ? _formatFullValue(curr) : _formatPreviewValue(curr),
     );
   }
 
-  /// 解析 "key: value, key2: value2" 格式的屬性
+  /// Parse "key: value, key2: value2" format properties
   Map<String, String> _parseProperties(String propsStr) {
     final result = <String, String>{};
-    // 簡單解析，處理 key: value 格式
+    // Simple parsing, handle key: value format
     final pattern = RegExp(r'(\w+):\s*([^,]+)');
     for (final match in pattern.allMatches(propsStr)) {
       result[match.group(1)!] = match.group(2)!.trim();
@@ -473,10 +474,10 @@ class _ProviderListTileState extends State<ProviderListTile> {
     return result;
   }
 
-  /// 從 {type, value} 格式中提取實際值
+  /// Extract actual value from {type, value} format
   dynamic _extractValue(dynamic value) {
     if (value is Map) {
-      // 如果有 value 字段，提取它
+      // If has value field, extract it
       if (value.containsKey('value')) {
         return value['value'];
       }
@@ -484,7 +485,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
     return value;
   }
 
-  /// 截斷字串
+  /// Truncate string
   String _truncate(dynamic value, [int maxLen = 20]) {
     if (value == null) return 'null';
     final str = value.toString();
@@ -494,22 +495,22 @@ class _ProviderListTileState extends State<ProviderListTile> {
     return str;
   }
 
-  /// 格式化完整值（不截斷）
+  /// Format full value (no truncation)
   String _formatFullValue(dynamic value) {
     if (value == null) return 'null';
     final extracted = _extractValue(value);
     return extracted.toString();
   }
 
-  /// 格式化預覽值（簡短版本）
+  /// Format preview value (short version)
   String _formatPreviewValue(dynamic value) {
     if (value == null) return 'null';
 
-    // 先提取實際值
+    // Extract actual value first
     final extracted = _extractValue(value);
     final str = extracted.toString();
 
-    // 如果是 Map，顯示關鍵內容
+    // If is Map, show key content
     if (extracted is Map) {
       if (extracted.isEmpty) return '{}';
       final entries = extracted.entries.take(2).map((e) {
@@ -518,7 +519,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       return extracted.length > 2 ? '$entries, ...' : entries;
     }
 
-    // 如果是 List，顯示長度和前幾個元素
+    // If is List, show length and first few elements
     if (extracted is List) {
       if (extracted.isEmpty) return '[]';
       if (extracted.length <= 3) {
@@ -527,7 +528,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
       return '[${extracted.length} items]';
     }
 
-    // 截斷過長的字串
+    // Truncate long strings
     if (str.length > 40) {
       return '${str.substring(0, 37)}...';
     }

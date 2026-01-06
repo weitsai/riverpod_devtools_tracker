@@ -4,13 +4,20 @@ import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart' hide Stack;
 
+import '../l10n/app_localizations.dart';
+import 'locale_manager.dart';
 import 'models/provider_state_info.dart';
 import 'widgets/provider_list_tile.dart';
 import 'widgets/state_detail_panel.dart';
 import 'theme/extension_theme.dart';
 
 class RiverpodDevToolsExtension extends StatefulWidget {
-  const RiverpodDevToolsExtension({super.key});
+  final LocaleManager localeManager;
+
+  const RiverpodDevToolsExtension({
+    super.key,
+    required this.localeManager,
+  });
 
   @override
   State<RiverpodDevToolsExtension> createState() =>
@@ -23,12 +30,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   ProviderStateInfo? _selectedProvider;
   StreamSubscription<Event>? _extensionEventSubscription;
   bool _isConnected = false;
-  String _searchText = ''; // 搜尋框輸入文字
-  final Set<String> _selectedProviders = {}; // 已選中的 providers（複選）
+  String _searchText = ''; // Search input text
+  final Set<String> _selectedProviders = {}; // Selected providers (multi-select)
   bool _showAllHistory = true;
   VoidCallback? _connectionListener;
 
-  // 狀態類型篩選
+  // Filter by change type
   final Set<String> _selectedChangeTypes = {
     'add',
     'update',
@@ -36,16 +43,16 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     'error',
   };
 
-  // 隱藏自動計算的更新（預設隱藏）
+  // Hide auto-computed updates (hidden by default)
   bool _hideAutoComputed = true;
 
-  // 搜尋建議
+  // Search suggestions
   final FocusNode _searchFocusNode = FocusNode();
   final TextEditingController _searchController = TextEditingController();
   final LayerLink _searchLayerLink = LayerLink();
   OverlayEntry? _searchOverlay;
 
-  // 篩選器 overlay
+  // Filter overlay
   final LayerLink _filterLayerLink = LayerLink();
   OverlayEntry? _filterOverlay;
 
@@ -60,7 +67,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     if (_searchFocusNode.hasFocus) {
       _showSearchSuggestionsOverlay();
     }
-    // 不自動關閉 overlay，讓用戶可以複選
+    // Don't auto-close overlay, allow multiple selections
   }
 
   void _setupConnectionListener() {
@@ -143,33 +150,33 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     var states =
         _showAllHistory ? _providerStates : _latestStates.values.toList();
 
-    // 篩選狀態類型
+    // Filter by change type
     states =
         states
             .where((s) => _selectedChangeTypes.contains(s.changeType))
             .toList();
 
-    // 隱藏自動計算的更新（沒有 location 的 update）
+    // Hide auto-computed updates (updates without location)
     if (_hideAutoComputed) {
       states =
           states.where((s) {
-            // 非 update 類型都保留
+            // Keep all non-update types
             if (s.changeType != 'update') return true;
-            // 有 location 的 update 都保留
+            // Keep all updates with location
             if (s.hasLocation) {
               return true;
             }
-            // 異步 Provider 的完成更新也保留（即使沒有 location）
-            // 檢查值是否為 AsyncValue 類型
+            // Also keep async provider completion updates (even without location)
+            // Check if value is AsyncValue type
             if (_isAsyncValueUpdate(s)) {
               return true;
             }
-            // 其他沒有 location 的 update（如 derived provider 自動計算）過濾掉
+            // Filter out other updates without location (e.g., derived provider auto-computed)
             return false;
           }).toList();
     }
 
-    // 篩選已選中的 providers（複選）
+    // Filter by selected providers (multi-select)
     if (_selectedProviders.isNotEmpty) {
       states =
           states
@@ -180,16 +187,16 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     return states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
 
-  /// 檢查是否為異步值的更新（FutureProvider/StreamProvider/AsyncNotifierProvider）
+  /// Check if this is an async value update (FutureProvider/StreamProvider/AsyncNotifierProvider)
   bool _isAsyncValueUpdate(ProviderStateInfo s) {
-    // 檢查 previousValue 或 currentValue 是否包含 AsyncValue 模式
+    // Check if previousValue or currentValue contains AsyncValue pattern
     final asyncPattern = RegExp(r'Async(Loading|Data|Error)<');
 
     String? getValueString(dynamic value) {
       if (value == null) return null;
       if (value is String) return value;
       if (value is Map) {
-        // 檢查 {type, value} 格式
+        // Check {type, value} format
         final type = value['type'];
         final val = value['value'];
         if (type is String && asyncPattern.hasMatch(type)) return type;
@@ -205,7 +212,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
         (currStr != null && asyncPattern.hasMatch(currStr));
   }
 
-  /// 取得所有不重複的 provider 名稱
+  /// Get all unique provider names
   List<String> get _allProviderNames {
     final names = <String>{};
     for (final state in _providerStates) {
@@ -214,7 +221,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     return names.toList()..sort();
   }
 
-  /// 取得符合搜尋條件的 provider 建議
+  /// Get provider suggestions matching the search criteria
   List<String> get _searchSuggestions {
     final allNames = _allProviderNames;
     if (_searchText.isEmpty) {
@@ -243,16 +250,16 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ExtensionTheme.darkTheme,
-      home: Scaffold(
+    final l10n = AppLocalizations.of(context)!;
+    return Theme(
+      data: ExtensionTheme.darkTheme,
+      child: Scaffold(
         backgroundColor: const Color(0xFF0D1117),
         body: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(l10n),
             Expanded(
-              child: _isConnected ? _buildContent() : _buildConnectionStatus(),
+              child: _isConnected ? _buildContent(l10n) : _buildConnectionStatus(l10n),
             ),
           ],
         ),
@@ -260,7 +267,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -286,29 +293,40 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Riverpod State Inspector',
-                style: TextStyle(
+              Text(
+                l10n.appTitle,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               const Spacer(),
-              _buildStatusIndicator(),
+              _buildStatusIndicator(l10n),
               const SizedBox(width: 16),
+              IconButton(
+                icon: const Icon(
+                  Icons.language,
+                  color: Color(0xFF8B949E),
+                ),
+                onPressed: () {
+                  widget.localeManager.toggleLocale();
+                },
+                tooltip: 'Toggle Language',
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(
                   Icons.delete_outline,
                   color: Color(0xFF8B949E),
                 ),
                 onPressed: _clearHistory,
-                tooltip: 'Clear History',
+                tooltip: l10n.clearHistory,
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // 已選中的 provider chips
+          // Selected provider chips
           if (_selectedProviders.isNotEmpty)
             Container(
               padding: const EdgeInsets.only(bottom: 8),
@@ -351,7 +369,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     },
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Filter Providers...',
+                      hintText: l10n.filterProviders,
                       hintStyle: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                       ),
@@ -376,7 +394,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                           if (_selectedProviders.isNotEmpty)
                             IconButton(
                               icon: const Icon(Icons.close, size: 18),
-                              tooltip: 'Clear All Filters',
+                              tooltip: l10n.clearAllFilters,
                               onPressed: () {
                                 setState(() {
                                   _selectedProviders.clear();
@@ -414,7 +432,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '$_totalChanges changes',
+                  l10n.changesCount(_totalChanges),
                   style: const TextStyle(
                     color: Color(0xFF3FB950),
                     fontSize: 12,
@@ -423,7 +441,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               ),
               const SizedBox(width: 8),
               FilterChip(
-                label: Text(_showAllHistory ? 'All History' : 'Latest Only'),
+                label: Text(_showAllHistory ? l10n.allHistory : l10n.latestOnly),
                 selected: _showAllHistory,
                 onSelected: (value) => setState(() => _showAllHistory = value),
                 selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
@@ -452,10 +470,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                             ? const Color(0xFF6366F1)
                             : const Color(0xFF8B949E),
                   ),
-                  tooltip: 'Filter Change Types',
+                  tooltip: l10n.filterChangeTypes,
                   onPressed: () {
                     if (_filterOverlay == null) {
-                      _showFilterOverlay();
+                      _showFilterOverlay(l10n);
                     } else {
                       _hideFilterOverlay();
                     }
@@ -469,7 +487,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  Widget _buildStatusIndicator() {
+  Widget _buildStatusIndicator(AppLocalizations l10n) {
     return Row(
       children: [
         Container(
@@ -485,7 +503,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
         ),
         const SizedBox(width: 6),
         Text(
-          _isConnected ? 'Connected' : 'Disconnected',
+          _isConnected ? l10n.connected : l10n.disconnected,
           style: TextStyle(
             color:
                 _isConnected
@@ -498,7 +516,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  Widget _buildConnectionStatus() {
+  Widget _buildConnectionStatus(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -506,7 +524,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           const CircularProgressIndicator(color: Color(0xFF6366F1)),
           const SizedBox(height: 16),
           Text(
-            'Connecting to application...',
+            l10n.connectingToApp,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 16,
@@ -514,7 +532,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Make sure your app is running with RiverpodDevToolsObserver',
+            l10n.makeSureAppRunning,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 12,
@@ -525,7 +543,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppLocalizations l10n) {
     if (_providerStates.isEmpty) {
       return Center(
         child: Column(
@@ -538,7 +556,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No state changes yet',
+              l10n.noStateChangesYet,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 16,
@@ -546,7 +564,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Provider state changes will appear here',
+              l10n.providerStateChangesWillAppearHere,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.3),
                 fontSize: 12,
@@ -571,7 +589,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     )
                     : Center(
                       child: Text(
-                        'Select a provider to view details',
+                        l10n.selectProviderToViewDetails,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                       ),
                     ),
@@ -613,8 +631,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     });
   }
 
-  /// 顯示篩選器 overlay
-  void _showFilterOverlay() {
+  /// Show filter overlay
+  void _showFilterOverlay(AppLocalizations l10n) {
     final overlay = Overlay.of(context);
     _filterOverlay = OverlayEntry(
       builder:
@@ -627,7 +645,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   right: 16,
                   top: 130,
                   child: GestureDetector(
-                    onTap: () {}, // 防止點擊菜單本身時關閉
+                    onTap: () {}, // Prevent closing when clicking menu itself
                     child: Material(
                       elevation: 8,
                       borderRadius: BorderRadius.circular(8),
@@ -648,17 +666,17 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                   bottom: BorderSide(color: Color(0xFF30363D)),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.filter_list,
                                     color: Color(0xFF8B949E),
                                     size: 18,
                                   ),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    'Filter Change Types',
-                                    style: TextStyle(
+                                    l10n.filterChangeTypes,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -667,12 +685,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                 ],
                               ),
                             ),
-                            _buildFilterCheckbox('add', '➕ Add'),
-                            _buildFilterCheckbox('update', '🔄 Update'),
-                            _buildFilterCheckbox('dispose', '🗑️ Dispose'),
-                            _buildFilterCheckbox('error', '❌ Error'),
+                            _buildFilterCheckbox(l10n, 'add', '➕ ${l10n.changeTypeAdd}'),
+                            _buildFilterCheckbox(l10n, 'update', '🔄 ${l10n.changeTypeUpdate}'),
+                            _buildFilterCheckbox(l10n, 'dispose', '🗑️ ${l10n.changeTypeDispose}'),
+                            _buildFilterCheckbox(l10n, 'error', '❌ ${l10n.changeTypeError}'),
                             const Divider(height: 1, color: Color(0xFF30363D)),
-                            _buildAutoComputedToggle(),
+                            _buildAutoComputedToggle(l10n),
                           ],
                         ),
                       ),
@@ -686,14 +704,14 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     overlay.insert(_filterOverlay!);
   }
 
-  /// 建立篩選器 checkbox
-  Widget _buildFilterCheckbox(String type, String label) {
+  /// Build filter checkbox
+  Widget _buildFilterCheckbox(AppLocalizations l10n, String type, String label) {
     final isSelected = _selectedChangeTypes.contains(type);
     return InkWell(
       onTap: () {
         setState(() {
           if (isSelected) {
-            // 至少要保留一個選項
+            // Keep at least one option selected
             if (_selectedChangeTypes.length > 1) {
               _selectedChangeTypes.remove(type);
             }
@@ -701,7 +719,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             _selectedChangeTypes.add(type);
           }
         });
-        // 重新構建 overlay 以更新 UI
+        // Rebuild overlay to update UI
         _rebuildFilterOverlay();
       },
       child: Container(
@@ -730,28 +748,29 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  /// 隱藏篩選器 overlay
+  /// Hide filter overlay
   void _hideFilterOverlay() {
     _filterOverlay?.remove();
     _filterOverlay = null;
   }
 
-  /// 重新構建篩選器 overlay
+  /// Rebuild filter overlay
   void _rebuildFilterOverlay() {
     if (_filterOverlay != null) {
       _hideFilterOverlay();
-      _showFilterOverlay();
+      final l10n = AppLocalizations.of(context)!;
+      _showFilterOverlay(l10n);
     }
   }
 
-  /// 建立自動計算切換選項
-  Widget _buildAutoComputedToggle() {
+  /// Build auto-computed toggle option
+  Widget _buildAutoComputedToggle(AppLocalizations l10n) {
     return InkWell(
       onTap: () {
         setState(() {
           _hideAutoComputed = !_hideAutoComputed;
         });
-        // 重新構建 overlay 以更新 UI
+        // Rebuild overlay to update UI
         _rebuildFilterOverlay();
       },
       child: Container(
@@ -773,8 +792,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 children: [
                   Text(
                     _hideAutoComputed
-                        ? 'Show auto-computed'
-                        : 'Hide auto-computed',
+                        ? l10n.showAutoComputed
+                        : l10n.hideAutoComputed,
                     style: TextStyle(
                       color:
                           _hideAutoComputed
@@ -783,9 +802,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                       fontSize: 13,
                     ),
                   ),
-                  const Text(
-                    'Derived provider updates',
-                    style: TextStyle(color: Color(0xFF6E7681), fontSize: 10),
+                  Text(
+                    l10n.derivedProviderUpdates,
+                    style: const TextStyle(color: Color(0xFF6E7681), fontSize: 10),
                   ),
                 ],
               ),
@@ -796,7 +815,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     );
   }
 
-  /// 顯示搜尋建議覆蓋層
+  /// Show search suggestions overlay
   void _showSearchSuggestionsOverlay() {
     _hideSearchSuggestionsOverlay();
 
@@ -804,6 +823,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     if (suggestions.isEmpty) return;
 
     final overlay = Overlay.of(context);
+    final l10n = AppLocalizations.of(context)!;
     _searchOverlay = OverlayEntry(
       builder:
           (context) => GestureDetector(
@@ -822,7 +842,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     followerAnchor: Alignment.topLeft,
                     offset: const Offset(0, 8),
                     child: GestureDetector(
-                      onTap: () {}, // 防止點擊列表時關閉
+                      onTap: () {}, // Prevent closing when clicking list
                       child: Material(
                         elevation: 8,
                         borderRadius: BorderRadius.circular(8),
@@ -836,7 +856,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // 標題列
+                              // Title row
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: const BoxDecoration(
@@ -854,9 +874,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                       size: 18,
                                     ),
                                     const SizedBox(width: 8),
-                                    const Text(
-                                      'Select Providers',
-                                      style: TextStyle(
+                                    Text(
+                                      l10n.selectProviders,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
@@ -870,9 +890,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                             _selectedProviders.clear();
                                           });
                                         },
-                                        child: const Text(
-                                          'Clear All',
-                                          style: TextStyle(
+                                        child: Text(
+                                          l10n.clearAll,
+                                          style: const TextStyle(
                                             color: Color(0xFF6366F1),
                                             fontSize: 12,
                                           ),
@@ -881,7 +901,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                   ],
                                 ),
                               ),
-                              // Provider 列表
+                              // Provider list
                               Flexible(
                                 child: ListView.builder(
                                   padding: const EdgeInsets.symmetric(
@@ -910,7 +930,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                             _selectedProviders.add(suggestion);
                                           }
                                         });
-                                        // 重新構建 overlay 以更新選擇狀態
+                                        // Rebuild overlay to update selection state
                                         _showSearchSuggestionsOverlay();
                                       },
                                       child: Container(
@@ -989,7 +1009,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     overlay.insert(_searchOverlay!);
   }
 
-  /// 隱藏搜尋建議覆蓋層
+  /// Hide search suggestions overlay
   void _hideSearchSuggestionsOverlay() {
     _searchOverlay?.remove();
     _searchOverlay = null;

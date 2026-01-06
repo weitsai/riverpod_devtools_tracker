@@ -3,14 +3,14 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "18fbad7453317b5e07f2f5372d97093b",
+const RESOURCES = {"flutter_bootstrap.js": "7546b9c2362a8e699a695a5c92c8113c",
 "version.json": "695d97111a63e9e9e6b5cf5910c8fd2c",
-"index.html": "4aab342f6f705416a959770e120db8e7",
-"/": "4aab342f6f705416a959770e120db8e7",
-"main.dart.js": "99a0181d220df3810b4035b557845813",
+"index.html": "f32d4605cac9e905790f4191e3bf5903",
+"/": "f32d4605cac9e905790f4191e3bf5903",
+"main.dart.js": "04a1388178133379d97d2ba405435ca4",
 "flutter.js": "24bc71911b75b5f8135c949e27a2984e",
 "manifest.json": "e98ed8ddd6d1d4daeb8916a6d092de5d",
-"assets/NOTICES": "26ac61fd6a2b524aaea1c97d9ed31ac6",
+"assets/NOTICES": "5c5bc77bcb6153293c33053cf1b5d4b0",
 "assets/FontManifest.json": "87d3db7932d6cb734bc450e9ac11b35e",
 "assets/AssetManifest.bin.json": "86f83fa5a49bd5d6c9aef42fd4800efa",
 "assets/packages/devtools_app_shared/fonts/Roboto_Mono/RobotoMono-Medium.ttf": "7cfbd4284ec01b7ace2f8edb5cddae84",
