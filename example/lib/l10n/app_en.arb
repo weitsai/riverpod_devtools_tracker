@@ -278,5 +278,20 @@
   "defaultUserName": "John Doe",
   "@defaultUserName": {
     "description": "Default user name for demo"
+  },
+
+  "languageSelector": "Language",
+  "@languageSelector": {
+    "description": "Language selector tooltip"
+  },
+
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "English language name"
+  },
+
+  "languageTraditionalChinese": "Traditional Chinese",
+  "@languageTraditionalChinese": {
+    "description": "Traditional Chinese language name"
   }
 }

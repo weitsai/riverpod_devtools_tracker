@@ -183,4 +183,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get defaultUserName => 'John Doe';
+
+  @override
+  String get languageSelector => 'Language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageTraditionalChinese => 'Traditional Chinese';
 }

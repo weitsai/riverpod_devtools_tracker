@@ -1,22 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
+import '../models/language.dart';
+import '../providers/locale_provider.dart';
 
 import 'counter_screen.dart';
 import 'user_screen.dart';
 import 'async_data_screen.dart';
 import 'todo_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final currentLanguage = ref.watch(localeProvider.notifier).currentLanguage;
+    final supportedLanguages = ref.watch(supportedLanguagesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.homeTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          PopupMenuButton<Language>(
+            icon: const Icon(Icons.language),
+            tooltip: 'Language / 語言',
+            onSelected: (Language language) {
+              ref.read(localeProvider.notifier).setLanguage(language);
+            },
+            itemBuilder: (BuildContext context) {
+              return supportedLanguages.map((Language language) {
+                final isSelected = language == currentLanguage;
+                return PopupMenuItem<Language>(
+                  value: language,
+                  child: Row(
+                    children: [
+                      if (isSelected)
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              language.nativeName,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            if (language.nativeName != language.englishName)
+                              Text(
+                                language.englishName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

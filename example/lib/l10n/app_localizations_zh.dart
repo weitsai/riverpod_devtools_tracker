@@ -175,6 +175,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get defaultUserName => '張小明';
+
+  @override
+  String get languageSelector => '語言';
+
+  @override
+  String get languageEnglish => '英文';
+
+  @override
+  String get languageTraditionalChinese => '繁體中文';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -348,4 +357,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get defaultUserName => '張小明';
+
+  @override
+  String get languageSelector => '語言';
+
+  @override
+  String get languageEnglish => '英文';
+
+  @override
+  String get languageTraditionalChinese => '繁體中文';
 }

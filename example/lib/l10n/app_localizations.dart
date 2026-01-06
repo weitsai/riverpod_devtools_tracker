@@ -434,6 +434,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'John Doe'**
   String get defaultUserName;
+
+  /// Language selector tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageSelector;
+
+  /// English language name
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// Traditional Chinese language name
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional Chinese'**
+  String get languageTraditionalChinese;
 }
 
 class _AppLocalizationsDelegate

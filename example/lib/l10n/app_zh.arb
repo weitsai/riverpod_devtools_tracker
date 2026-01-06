@@ -55,5 +55,8 @@
   "addTodoDialogTitle": "新增待辦事項",
   "todoContent": "事項內容",
   "add": "新增",
-  "defaultUserName": "張小明"
+  "defaultUserName": "張小明",
+  "languageSelector": "語言",
+  "languageEnglish": "英文",
+  "languageTraditionalChinese": "繁體中文"
 }
