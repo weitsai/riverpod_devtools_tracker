@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 這是一個 Flutter/Dart 包，用於自動追蹤 Riverpod 狀態變化並提供詳細的調用堆疊信息。包含兩個主要部分：
 1. **核心包** (`lib/`) - 提供 `RiverpodDevToolsObserver` 來監聽 Provider 變化
-2. **DevTools 擴展** (`devtools_extension/`) - 提供視覺化介面來檢視狀態變化
+2. **DevTools 擴展** (`extension/devtools/`) - 預構建的 DevTools 擴展，自動被 Flutter DevTools 發現
 
 ## 常用開發命令
 
@@ -22,19 +22,11 @@ flutter test
 flutter analyze
 ```
 
-### DevTools 擴展開發
-```bash
-# 構建並複製 DevTools 擴展（推薦使用腳本）
-./scripts/build_extension.sh
+### DevTools 擴展
+DevTools 擴展已預先構建並包含在 `extension/devtools/` 目錄中。
+該擴展會被 Flutter DevTools 自動發現，無需額外配置。
 
-# 或手動構建
-cd devtools_extension
-flutter pub get
-dart run devtools_extensions build_and_copy --source=. --dest=../extension/devtools
-
-# 驗證擴展
-dart run devtools_extensions validate --package=..
-```
+配置文件：`extension/devtools/config.yaml`
 
 ## 架構概覽
 
@@ -64,13 +56,21 @@ dart run devtools_extensions validate --package=..
      - `maxCallChainDepth` - 最大堆疊深度
      - `enableConsoleOutput` / `prettyConsoleOutput` - console 輸出控制
 
-### DevTools 擴展架構（devtools_extension/）
+### DevTools 擴展結構（extension/devtools/）
 
-- **main.dart** - 入口點，使用 `DevToolsExtension` widget
-- **src/riverpod_devtools_extension.dart** - 主要擴展 UI 組件
-- **src/models/provider_state_info.dart** - 狀態變化的數據模型
-- **src/widgets/** - UI 組件（Provider 列表、詳情面板）
-- **src/theme/extension_theme.dart** - GitHub 風格暗色主題
+DevTools 擴展已預先構建並包含在套件中：
+- **config.yaml** - 擴展配置文件（名稱、版本、圖標等）
+- **build/** - 構建後的 Web 資源
+  - **index.html** - 擴展入口
+  - **main.dart.js** - 編譯後的 Dart 代碼
+  - **assets/** - 靜態資源文件
+
+擴展功能：
+- 實時監控 Riverpod 狀態變化
+- 互動式 Provider 列表與過濾
+- 詳細的調用鏈視覺化
+- GitHub 風格暗色主題
+- 多語言支援（英文、繁體中文）
 
 ### 數據流
 
@@ -97,7 +97,11 @@ Provider 變化 → RiverpodDevToolsObserver.didUpdateProvider()
 
 ## 測試
 
-測試文件位於 [test/](test/) 目錄。當前包含基本的包導入測試。
+測試文件位於 [test/](test/) 目錄：
+- **riverpod_devtools_tracker_test.dart** - TrackerConfig 和 StackTraceParser 測試（11 個測試）
+- **riverpod_devtools_observer_test.dart** - RiverpodDevToolsObserver 測試（18 個測試）
+
+總計 29 個測試，覆蓋核心功能、記憶體管理、值序列化等。
 
 ## FVM 配置
 
