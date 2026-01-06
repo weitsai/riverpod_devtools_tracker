@@ -1,5 +1,5 @@
 name: riverpod_devtools_tracker
-description: A powerful Flutter package that tracks Riverpod state changes with detailed call stack information, helping you debug by showing exactly where state changes originated in your code.
+description: Track Riverpod state changes with detailed call stacks. Debug easily by seeing exactly where state changes originated in your code.
 version: 1.0.0
 homepage: https://github.com/weitsai/riverpod_devtools_tracker
 repository: https://github.com/weitsai/riverpod_devtools_tracker

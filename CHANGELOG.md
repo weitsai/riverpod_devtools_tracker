@@ -1,5 +1,7 @@
 ## 1.0.0
 
+**Release Date**: 2026-01-07
+
 ### Features
 
 * **RiverpodDevToolsObserver** - Automatic provider lifecycle tracking

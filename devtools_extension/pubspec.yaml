@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  intl: any
+  intl: ^0.20.0
   devtools_extensions: ^0.3.1
   devtools_app_shared: ^0.3.1
   vm_service: ^14.0.0
