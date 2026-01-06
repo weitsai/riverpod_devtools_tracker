@@ -1,28 +1,74 @@
 /// Configuration for Riverpod DevTools Tracker
+///
+/// This class controls how the tracker behaves and what information it collects.
+/// Use [TrackerConfig.forPackage] for a quick setup with sensible defaults.
+///
+/// Example:
+/// ```dart
+/// // Simple setup - just provide your package name
+/// RiverpodDevToolsObserver(
+///   config: TrackerConfig.forPackage('my_app'),
+/// )
+///
+/// // Advanced setup with custom configuration
+/// RiverpodDevToolsObserver(
+///   config: TrackerConfig(
+///     packagePrefixes: ['package:my_app/'],
+///     enableConsoleOutput: false, // Disable for production
+///     maxCallChainDepth: 15,
+///   ),
+/// )
+/// ```
 class TrackerConfig {
   /// Whether tracking is enabled
+  ///
+  /// Set to false to completely disable the tracker. Useful for conditional
+  /// enabling in different environments (e.g., only in debug mode).
   final bool enabled;
 
   /// Package prefixes for your app, used to filter stack traces
-  /// Example: ['package:my_app/', 'package:my_common/']
+  ///
+  /// Only stack traces from code in these packages will be shown.
+  /// This helps filter out framework code and focus on your application code.
+  ///
+  /// Example: `['package:my_app/', 'package:my_common/']`
   final List<String> packagePrefixes;
 
   /// Whether to output tracking info to console
+  ///
+  /// When enabled, provider changes will be logged to the console.
+  /// Set to false in production for better performance.
   final bool enableConsoleOutput;
 
   /// Whether to use pretty formatted console output (with box characters)
+  ///
+  /// When true, uses formatted output with emojis and boxes.
+  /// When false, uses simple one-line format.
   final bool prettyConsoleOutput;
 
-  /// Maximum call chain depth
+  /// Maximum call chain depth to capture
+  ///
+  /// Limits how many stack frames are captured and displayed.
+  /// Lower values improve performance but may miss deep call chains.
+  /// Recommended: 10-15 for most apps.
   final int maxCallChainDepth;
 
-  /// Maximum value display length
+  /// Maximum value display length in console output
+  ///
+  /// Values longer than this will be truncated in console output.
+  /// Note: Full values are always sent to DevTools extension.
   final int maxValueLength;
 
-  /// Package prefixes to ignore
+  /// Package prefixes to ignore in stack traces
+  ///
+  /// Stack frames from these packages will be filtered out.
+  /// By default, includes Flutter and Riverpod framework packages.
   final List<String> ignoredPackagePrefixes;
 
   /// File patterns to ignore (partial match)
+  ///
+  /// Files matching these patterns will be filtered from stack traces.
+  /// Useful for ignoring generated files like `.g.dart`.
   final List<String> ignoredFilePatterns;
 
   const TrackerConfig({

@@ -324,6 +324,98 @@ If the tracker is slowing down your app:
    ]
    ```
 
+## Best Practices
+
+### For Production Use
+
+We recommend disabling the tracker in production builds for optimal performance:
+
+```dart
+import 'package:flutter/foundation.dart';
+
+void main() {
+  runApp(
+    ProviderScope(
+      observers: [
+        // Only enable tracking in debug mode
+        if (kDebugMode)
+          RiverpodDevToolsObserver(
+            config: TrackerConfig.forPackage('your_app'),
+          ),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
+```
+
+### Performance Optimization
+
+If you experience performance issues during development:
+
+1. **Disable console output**: Set `enableConsoleOutput: false` for better performance
+2. **Reduce call chain depth**: Lower `maxCallChainDepth` to 5-8 for faster tracking
+3. **Filter aggressively**: Add more patterns to `ignoredFilePatterns` to reduce noise
+4. **Target specific providers**: Use `packagePrefixes` to focus only on your app's code
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app',
+    enableConsoleOutput: false,      // Better performance
+    maxCallChainDepth: 5,             // Faster tracking
+    ignoredFilePatterns: ['.g.dart', '.freezed.dart'], // Less noise
+  ),
+)
+```
+
+## Advanced Usage
+
+### Tracking Multiple Packages
+
+If your app uses multiple custom packages:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    additionalPackages: [
+      'package:my_common/',
+      'package:my_features/',
+    ],
+  ),
+)
+```
+
+### Custom Filtering
+
+Create highly customized filtering rules:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig(
+    packagePrefixes: ['package:my_app/'],
+    ignoredFilePatterns: [
+      '.g.dart',           // Generated files
+      '.freezed.dart',     // Freezed files
+      '_test.dart',        // Test files
+      '/generated/',       // Generated directories
+    ],
+    ignoredPackagePrefixes: [
+      'package:flutter/',
+      'package:flutter_riverpod/',
+      'package:riverpod/',
+      'dart:',
+      'package:go_router/',  // Add other packages to ignore
+    ],
+  ),
+)
+```
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 ## Requirements
 
 - Flutter SDK >= 3.27.0
@@ -333,3 +425,9 @@ If the tracker is slowing down your app:
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Support
+
+- 📝 [Report Issues](https://github.com/weitsai/riverpod_devtools_tracker/issues)
+- 💬 [Discussions](https://github.com/weitsai/riverpod_devtools_tracker/discussions)
+- ⭐ If you find this package useful, please consider giving it a star on GitHub!

@@ -41,7 +41,15 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// 記錄每個 Provider 最近一次有效的觸發堆疊（用於異步 Provider）
   /// Key: Provider 的名稱
   /// 這個堆疊會在每次有有效用戶代碼的操作時更新
+  ///
+  /// 注意：為了防止記憶體洩漏，這個 Map 會定期清理舊的記錄
   final Map<String, _ProviderStackTrace> _providerStacks = {};
+
+  /// 堆疊緩存的最大大小（防止記憶體洩漏）
+  static const int _maxStackCacheSize = 100;
+
+  /// 堆疊記錄的過期時間（毫秒）
+  static const int _stackExpirationMs = 60000; // 60 seconds
 
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
@@ -218,7 +226,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     List<LocationInfo> callChain,
   ) {
     // 只有當堆疊包含有效的用戶代碼時才保存
-    if (_hasValidUserCode(callChain) || 
+    if (_hasValidUserCode(callChain) ||
         (triggerLocation != null && !_isProviderFile(triggerLocation.file))) {
       _providerStacks[providerName] = _ProviderStackTrace(
         stackTrace: stackTrace,
@@ -226,6 +234,32 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         callChain: callChain,
         timestamp: DateTime.now(),
       );
+
+      // 清理過期的堆疊記錄以防止記憶體洩漏
+      _cleanupExpiredStacks();
+    }
+  }
+
+  /// 清理過期的堆疊記錄
+  void _cleanupExpiredStacks() {
+    // 如果緩存大小超過限制，清理所有過期記錄
+    if (_providerStacks.length > _maxStackCacheSize) {
+      final now = DateTime.now();
+      _providerStacks.removeWhere((key, value) {
+        final age = now.difference(value.timestamp).inMilliseconds;
+        return age > _stackExpirationMs;
+      });
+
+      // 如果清理後還是超過限制，移除最舊的記錄
+      if (_providerStacks.length > _maxStackCacheSize) {
+        final entries = _providerStacks.entries.toList()
+          ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+
+        final toRemove = _providerStacks.length - _maxStackCacheSize;
+        for (var i = 0; i < toRemove; i++) {
+          _providerStacks.remove(entries[i].key);
+        }
+      }
     }
   }
 
