@@ -31,11 +31,9 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
         children: [
           _buildHeader(),
           const SizedBox(height: 20),
-          _buildTriggerLocationSection(),
-          const SizedBox(height: 20),
           _buildValueComparison(),
           const SizedBox(height: 20),
-          _buildStackTraceSection(),
+          _buildTriggerLocationSection(),
         ],
       ),
     );
