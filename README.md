@@ -6,6 +6,9 @@
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
 [![style: flutter lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
 
+
+![Code Location Tracking](doc/images/code-location-tracking.png)
+
 A powerful Flutter package that automatically tracks Riverpod state changes with detailed call stack information, helping you debug by showing exactly where state changes originated in your code.
 
 **[繁體中文](README.zh-TW.md)** | English
