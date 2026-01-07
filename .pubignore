@@ -18,6 +18,7 @@ ITERATION_24_FINAL.md
 ITERATION_25_CI_CD_SETUP.md
 ITERATION_26_POLISH.md
 ITERATION_27_FINAL_REFINEMENT.md
+ITERATION_28_ZERO_WARNINGS.md
 example/ITERATION_6_FINAL_REPORT.md
 
 # Claude configuration (development only)
@@ -38,7 +39,7 @@ CLAUDE.md
 .packages
 
 # Build directories (but keep extension/devtools/build for DevTools)
-build/
+**/build/
 !extension/devtools/build/
 
 # Coverage and test artifacts
