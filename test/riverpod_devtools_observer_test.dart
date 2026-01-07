@@ -31,9 +31,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           observers: [observer],
-          child: const MaterialApp(
-            home: Scaffold(body: Text('Test')),
-          ),
+          child: const MaterialApp(home: Scaffold(body: Text('Test'))),
         ),
       );
 
@@ -135,12 +133,12 @@ final class _TestObserver extends RiverpodDevToolsObserver {
   final List<ProviderObserverContext> errorEvents = [];
 
   _TestObserver()
-      : super(
-          config: TrackerConfig.forPackage(
-            'test_app',
-            enableConsoleOutput: false, // Disable console for tests
-          ),
-        );
+    : super(
+        config: TrackerConfig.forPackage(
+          'test_app',
+          enableConsoleOutput: false, // Disable console for tests
+        ),
+      );
 
   @override
   void didAddProvider(ProviderObserverContext context, Object? value) {

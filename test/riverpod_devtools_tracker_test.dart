@@ -14,7 +14,9 @@ void main() {
       expect(config.maxValueLength, 200);
       expect(config.ignoredPackagePrefixes, contains('package:flutter/'));
       expect(
-          config.ignoredPackagePrefixes, contains('package:flutter_riverpod/'));
+        config.ignoredPackagePrefixes,
+        contains('package:flutter_riverpod/'),
+      );
       expect(config.ignoredPackagePrefixes, contains('package:riverpod/'));
       expect(config.ignoredPackagePrefixes, contains('dart:'));
     });
@@ -44,15 +46,9 @@ void main() {
     });
 
     test('copyWith creates modified copy', () {
-      const original = TrackerConfig(
-        enabled: true,
-        maxCallChainDepth: 10,
-      );
+      const original = TrackerConfig(enabled: true, maxCallChainDepth: 10);
 
-      final modified = original.copyWith(
-        enabled: false,
-        maxCallChainDepth: 5,
-      );
+      final modified = original.copyWith(enabled: false, maxCallChainDepth: 5);
 
       expect(modified.enabled, false);
       expect(modified.maxCallChainDepth, 5);
@@ -145,9 +141,7 @@ void main() {
     late StackTraceParser parser;
 
     setUp(() {
-      parser = StackTraceParser(
-        TrackerConfig.forPackage('test_app'),
-      );
+      parser = StackTraceParser(TrackerConfig.forPackage('test_app'));
     });
 
     test('parseCallChain returns empty list for empty trace', () {
@@ -215,18 +209,20 @@ void main() {
       expect(trigger!.function, 'triggerFunc');
     });
 
-    test('findTriggerLocation returns first location if all are provider files',
-        () {
-      final stackTrace = StackTrace.fromString('''
+    test(
+      'findTriggerLocation returns first location if all are provider files',
+      () {
+        final stackTrace = StackTrace.fromString('''
 #0      func1 (package:test_app/providers/provider1.dart:10:5)
 #1      func2 (package:test_app/providers/provider2.dart:20:5)
 ''');
 
-      final trigger = parser.findTriggerLocation(stackTrace);
+        final trigger = parser.findTriggerLocation(stackTrace);
 
-      expect(trigger, isNotNull);
-      expect(trigger!.function, 'func1');
-    });
+        expect(trigger, isNotNull);
+        expect(trigger!.function, 'func1');
+      },
+    );
 
     test('findTriggerLocation returns null for empty trace', () {
       final stackTrace = StackTrace.fromString('');
@@ -249,10 +245,7 @@ void main() {
 
     test('parseCallChain with ignoredFilePatterns', () {
       final parser = StackTraceParser(
-        TrackerConfig.forPackage(
-          'test_app',
-          ignoredFilePatterns: ['.g.dart'],
-        ),
+        TrackerConfig.forPackage('test_app', ignoredFilePatterns: ['.g.dart']),
       );
 
       final stackTrace = StackTrace.fromString('''

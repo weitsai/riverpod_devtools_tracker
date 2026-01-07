@@ -23,17 +23,14 @@ class CounterScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              l10n.currentCount,
-              style: const TextStyle(fontSize: 20),
-            ),
+            Text(l10n.currentCount, style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 8),
             Text(
               '$count',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: isEven ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: isEven ? Colors.green : Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 32),
             Card(
@@ -83,16 +80,10 @@ class CounterScreen extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text(label, style: const TextStyle(fontSize: 16)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

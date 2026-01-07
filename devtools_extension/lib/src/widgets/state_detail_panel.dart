@@ -149,7 +149,11 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
           if (hasExplicitLocation) ...[
             Row(
               children: [
-                const Icon(Icons.location_on, color: Color(0xFF3FB950), size: 18),
+                const Icon(
+                  Icons.location_on,
+                  color: Color(0xFF3FB950),
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.changeSource,
@@ -216,7 +220,9 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                 ),
                 const Spacer(),
                 Text(
-                  AppLocalizations.of(context)!.itemsCount(stateInfo.callChain.length),
+                  AppLocalizations.of(
+                    context,
+                  )!.itemsCount(stateInfo.callChain.length),
                   style: const TextStyle(
                     color: Color(0xFF8B949E),
                     fontSize: 12,
@@ -251,7 +257,11 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
         children: [
           Row(
             children: [
-              const Icon(Icons.compare_arrows, color: Color(0xFF8B949E), size: 18),
+              const Icon(
+                Icons.compare_arrows,
+                color: Color(0xFF8B949E),
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 AppLocalizations.of(context)!.stateChange,
@@ -274,8 +284,10 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                   stateInfo.formattedPreviousValue,
                   const Color(0xFFF85149),
                   isExpanded: _isBeforeExpanded,
-                  onToggle: () =>
-                      setState(() => _isBeforeExpanded = !_isBeforeExpanded),
+                  onToggle:
+                      () => setState(
+                        () => _isBeforeExpanded = !_isBeforeExpanded,
+                      ),
                 ),
               ),
               const Padding(
@@ -289,8 +301,9 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                   stateInfo.formattedCurrentValue,
                   const Color(0xFF3FB950),
                   isExpanded: _isAfterExpanded,
-                  onToggle: () =>
-                      setState(() => _isAfterExpanded = !_isAfterExpanded),
+                  onToggle:
+                      () =>
+                          setState(() => _isAfterExpanded = !_isAfterExpanded),
                 ),
               ),
             ],
@@ -310,9 +323,10 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
   }) {
     final l10n = AppLocalizations.of(context)!;
     final needsExpand = value.length > _collapsedMaxLength;
-    final displayValue = !needsExpand || isExpanded
-        ? value
-        : '${value.substring(0, _collapsedMaxLength)}...';
+    final displayValue =
+        !needsExpand || isExpanded
+            ? value
+            : '${value.substring(0, _collapsedMaxLength)}...';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,7 +510,8 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isFirst ? const Color(0xFF238636).withValues(alpha: 0.1) : null,
+          color:
+              isFirst ? const Color(0xFF238636).withValues(alpha: 0.1) : null,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -559,7 +574,10 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isUserCode ? const Color(0xFF238636).withValues(alpha: 0.1) : null,
+          color:
+              isUserCode
+                  ? const Color(0xFF238636).withValues(alpha: 0.1)
+                  : null,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

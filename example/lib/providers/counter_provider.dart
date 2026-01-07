@@ -15,14 +15,14 @@ class Counter extends _$Counter {
 
 /// Counter double Provider - demonstrates dependency on other Providers
 @riverpod
-int counterDouble(ref) {
+int counterDouble(Ref ref) {
   final count = ref.watch(counterProvider);
   return count * 2;
 }
 
 /// Counter is even Provider
 @riverpod
-bool isEven(ref) {
+bool isEven(Ref ref) {
   final count = ref.watch(counterProvider);
   return count % 2 == 0;
 }

@@ -45,9 +45,10 @@ class ProviderStateInfo {
       providerType: json['providerType'] as String? ?? 'Unknown',
       previousValue: json['previousValue'],
       currentValue: json['currentValue'],
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'] as String)
-          : DateTime.now(),
+      timestamp:
+          json['timestamp'] != null
+              ? DateTime.parse(json['timestamp'] as String)
+              : DateTime.now(),
       changeType: json['changeType'] as String? ?? 'update',
       stackTrace:
           (json['stackTrace'] as List<dynamic>?)
@@ -128,8 +129,9 @@ class ProviderStateInfo {
   String _formatAsyncValue(String value, String? type) {
     // AsyncLoading with value pattern: AsyncLoading<Type>(value: ...)
     // This happens when refreshing - it's loading but has previous value
-    final loadingWithValuePattern =
-        RegExp(r'^AsyncLoading<(.+)>\(value:\s*(.+)\)$');
+    final loadingWithValuePattern = RegExp(
+      r'^AsyncLoading<(.+)>\(value:\s*(.+)\)$',
+    );
     final loadingWithValueMatch = loadingWithValuePattern.firstMatch(value);
     if (loadingWithValueMatch != null) {
       final innerValue = loadingWithValueMatch.group(2);
@@ -153,8 +155,9 @@ class ProviderStateInfo {
     }
 
     // AsyncError pattern: AsyncError<Type>(error: ..., stackTrace: ...)
-    final errorPattern =
-        RegExp(r'^AsyncError<(.+)>\(error:\s*(.+?),\s*stackTrace:');
+    final errorPattern = RegExp(
+      r'^AsyncError<(.+)>\(error:\s*(.+?),\s*stackTrace:',
+    );
     final errorMatch = errorPattern.firstMatch(value);
     if (errorMatch != null) {
       final error = errorMatch.group(2);

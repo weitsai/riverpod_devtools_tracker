@@ -14,10 +14,7 @@ import 'theme/extension_theme.dart';
 class RiverpodDevToolsExtension extends StatefulWidget {
   final LocaleManager localeManager;
 
-  const RiverpodDevToolsExtension({
-    super.key,
-    required this.localeManager,
-  });
+  const RiverpodDevToolsExtension({super.key, required this.localeManager});
 
   @override
   State<RiverpodDevToolsExtension> createState() =>
@@ -31,7 +28,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   StreamSubscription<Event>? _extensionEventSubscription;
   bool _isConnected = false;
   String _searchText = ''; // Search input text
-  final Set<String> _selectedProviders = {}; // Selected providers (multi-select)
+  final Set<String> _selectedProviders =
+      {}; // Selected providers (multi-select)
   bool _showAllHistory = true;
   VoidCallback? _connectionListener;
 
@@ -196,7 +194,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               .toList();
     }
 
-    final result = states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final result =
+        states.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     // Cache the result
     _cachedFilteredProviders = result;
@@ -282,7 +281,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           children: [
             _buildHeader(l10n),
             Expanded(
-              child: _isConnected ? _buildContent(l10n) : _buildConnectionStatus(l10n),
+              child:
+                  _isConnected
+                      ? _buildContent(l10n)
+                      : _buildConnectionStatus(l10n),
             ),
           ],
         ),
@@ -328,10 +330,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               _buildStatusIndicator(l10n),
               const SizedBox(width: 16),
               IconButton(
-                icon: const Icon(
-                  Icons.language,
-                  color: Color(0xFF8B949E),
-                ),
+                icon: const Icon(Icons.language, color: Color(0xFF8B949E)),
                 onPressed: () {
                   widget.localeManager.toggleLocale();
                 },
@@ -466,12 +465,15 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               ),
               const SizedBox(width: 8),
               FilterChip(
-                label: Text(_showAllHistory ? l10n.allHistory : l10n.latestOnly),
+                label: Text(
+                  _showAllHistory ? l10n.allHistory : l10n.latestOnly,
+                ),
                 selected: _showAllHistory,
-                onSelected: (value) => setState(() {
-                  _showAllHistory = value;
-                  _invalidateFilterCache();
-                }),
+                onSelected:
+                    (value) => setState(() {
+                      _showAllHistory = value;
+                      _invalidateFilterCache();
+                    }),
                 selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
@@ -618,7 +620,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     : Center(
                       child: Text(
                         l10n.selectProviderToViewDetails,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
                       ),
                     ),
           ),
@@ -713,10 +717,26 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                 ],
                               ),
                             ),
-                            _buildFilterCheckbox(l10n, 'add', '➕ ${l10n.changeTypeAdd}'),
-                            _buildFilterCheckbox(l10n, 'update', '🔄 ${l10n.changeTypeUpdate}'),
-                            _buildFilterCheckbox(l10n, 'dispose', '🗑️ ${l10n.changeTypeDispose}'),
-                            _buildFilterCheckbox(l10n, 'error', '❌ ${l10n.changeTypeError}'),
+                            _buildFilterCheckbox(
+                              l10n,
+                              'add',
+                              '➕ ${l10n.changeTypeAdd}',
+                            ),
+                            _buildFilterCheckbox(
+                              l10n,
+                              'update',
+                              '🔄 ${l10n.changeTypeUpdate}',
+                            ),
+                            _buildFilterCheckbox(
+                              l10n,
+                              'dispose',
+                              '🗑️ ${l10n.changeTypeDispose}',
+                            ),
+                            _buildFilterCheckbox(
+                              l10n,
+                              'error',
+                              '❌ ${l10n.changeTypeError}',
+                            ),
                             const Divider(height: 1, color: Color(0xFF30363D)),
                             _buildAutoComputedToggle(l10n),
                           ],
@@ -733,7 +753,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   /// Build filter checkbox
-  Widget _buildFilterCheckbox(AppLocalizations l10n, String type, String label) {
+  Widget _buildFilterCheckbox(
+    AppLocalizations l10n,
+    String type,
+    String label,
+  ) {
     final isSelected = _selectedChangeTypes.contains(type);
     return InkWell(
       onTap: () {
@@ -834,7 +858,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   ),
                   Text(
                     l10n.derivedProviderUpdates,
-                    style: const TextStyle(color: Color(0xFF6E7681), fontSize: 10),
+                    style: const TextStyle(
+                      color: Color(0xFF6E7681),
+                      fontSize: 10,
+                    ),
                   ),
                 ],
               ),

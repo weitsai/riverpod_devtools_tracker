@@ -47,16 +47,10 @@ class _RiverpodDevToolsExtensionAppState
               Locale('en'), // English
               Locale('zh'), // Chinese
             ],
-            home: RiverpodDevToolsExtension(
-              localeManager: _localeManager,
-            ),
+            home: RiverpodDevToolsExtension(localeManager: _localeManager),
           ),
         );
       },
     );
   }
 }
-
-
-
-

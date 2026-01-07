@@ -12,9 +12,7 @@ void main() {
     ProviderScope(
       observers: [
         // Integrate RiverpodDevToolsObserver to track all Provider state changes
-        RiverpodDevToolsObserver(
-          config: TrackerConfig.forPackage('example'),
-        ),
+        RiverpodDevToolsObserver(config: TrackerConfig.forPackage('example')),
       ],
       child: const MyApp(),
     ),

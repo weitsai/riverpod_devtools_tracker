@@ -30,6 +30,6 @@ class LocaleNotifier extends _$LocaleNotifier {
 
 /// Provider for the list of supported languages
 @riverpod
-List<Language> supportedLanguages(ref) {
+List<Language> supportedLanguages(Ref ref) {
   return SupportedLanguages.all;
 }

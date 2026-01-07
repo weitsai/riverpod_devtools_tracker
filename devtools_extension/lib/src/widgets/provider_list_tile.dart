@@ -50,9 +50,10 @@ class _ProviderListTileState extends State<ProviderListTile> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
-        color: isSelected
-            ? const Color(0xFF6366F1).withValues(alpha: 0.2)
-            : const Color(0xFF161B22),
+        color:
+            isSelected
+                ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                : const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -63,9 +64,10 @@ class _ProviderListTileState extends State<ProviderListTile> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF6366F1)
-                    : const Color(0xFF30363D),
+                color:
+                    isSelected
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFF30363D),
                 width: 1,
               ),
             ),
@@ -203,9 +205,10 @@ class _ProviderListTileState extends State<ProviderListTile> {
       final needsExpand = currValueFull.length > currValueShort.length;
 
       return GestureDetector(
-        onTap: needsExpand
-            ? () => setState(() => _isValueExpanded = !_isValueExpanded)
-            : null,
+        onTap:
+            needsExpand
+                ? () => setState(() => _isValueExpanded = !_isValueExpanded)
+                : null,
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -220,11 +223,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.add,
-                    size: 12,
-                    color: Color(0xFF3FB950),
-                  ),
+                  const Icon(Icons.add, size: 12, color: Color(0xFF3FB950)),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -240,9 +239,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                   ),
                   if (needsExpand)
                     Icon(
-                      _isValueExpanded
-                          ? Icons.unfold_less
-                          : Icons.unfold_more,
+                      _isValueExpanded ? Icons.unfold_less : Icons.unfold_more,
                       size: 14,
                       color: const Color(0xFF8B949E),
                     ),
@@ -264,15 +261,17 @@ class _ProviderListTileState extends State<ProviderListTile> {
       stateInfo.currentValue,
       expanded: true,
     );
-    final needsExpand = fullDiffResult.previous.length > diffResult.previous.length ||
+    final needsExpand =
+        fullDiffResult.previous.length > diffResult.previous.length ||
         fullDiffResult.current.length > diffResult.current.length;
 
     // If no arrow needed (already in diff format), show diff directly
     if (!diffResult.showArrow) {
       return GestureDetector(
-        onTap: needsExpand
-            ? () => setState(() => _isValueExpanded = !_isValueExpanded)
-            : null,
+        onTap:
+            needsExpand
+                ? () => setState(() => _isValueExpanded = !_isValueExpanded)
+                : null,
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -285,7 +284,9 @@ class _ProviderListTileState extends State<ProviderListTile> {
             children: [
               Expanded(
                 child: Text(
-                  _isValueExpanded ? fullDiffResult.previous : diffResult.previous,
+                  _isValueExpanded
+                      ? fullDiffResult.previous
+                      : diffResult.previous,
                   style: const TextStyle(
                     color: Color(0xFFFFA657),
                     fontSize: 11,
@@ -299,9 +300,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Icon(
-                    _isValueExpanded
-                        ? Icons.unfold_less
-                        : Icons.unfold_more,
+                    _isValueExpanded ? Icons.unfold_less : Icons.unfold_more,
                     size: 14,
                     color: const Color(0xFF8B949E),
                   ),
@@ -313,9 +312,10 @@ class _ProviderListTileState extends State<ProviderListTile> {
     }
 
     return GestureDetector(
-      onTap: needsExpand
-          ? () => setState(() => _isValueExpanded = !_isValueExpanded)
-          : null,
+      onTap:
+          needsExpand
+              ? () => setState(() => _isValueExpanded = !_isValueExpanded)
+              : null,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -330,7 +330,9 @@ class _ProviderListTileState extends State<ProviderListTile> {
               children: [
                 Expanded(
                   child: Text(
-                    _isValueExpanded ? fullDiffResult.previous : diffResult.previous,
+                    _isValueExpanded
+                        ? fullDiffResult.previous
+                        : diffResult.previous,
                     style: const TextStyle(
                       color: Color(0xFFF85149),
                       fontSize: 11,
@@ -350,7 +352,9 @@ class _ProviderListTileState extends State<ProviderListTile> {
                 ),
                 Expanded(
                   child: Text(
-                    _isValueExpanded ? fullDiffResult.current : diffResult.current,
+                    _isValueExpanded
+                        ? fullDiffResult.current
+                        : diffResult.current,
                     style: const TextStyle(
                       color: Color(0xFF3FB950),
                       fontSize: 11,
@@ -364,9 +368,7 @@ class _ProviderListTileState extends State<ProviderListTile> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
                     child: Icon(
-                      _isValueExpanded
-                          ? Icons.unfold_less
-                          : Icons.unfold_more,
+                      _isValueExpanded ? Icons.unfold_less : Icons.unfold_more,
                       size: 14,
                       color: const Color(0xFF8B949E),
                     ),
@@ -380,13 +382,18 @@ class _ProviderListTileState extends State<ProviderListTile> {
   }
 
   /// Extract differences between two values
-  _DiffResult _extractDiff(dynamic prev, dynamic curr, {bool expanded = false}) {
+  _DiffResult _extractDiff(
+    dynamic prev,
+    dynamic curr, {
+    bool expanded = false,
+  }) {
     // Extract actual values (handle {type, value} format)
     final prevExtracted = _extractValue(prev);
     final currExtracted = _extractValue(curr);
 
     // Decide truncate length based on expanded
-    String truncateVal(dynamic val) => expanded ? val.toString() : _truncate(val);
+    String truncateVal(dynamic val) =>
+        expanded ? val.toString() : _truncate(val);
 
     // If both are Maps, find changed fields
     if (prevExtracted is Map && currExtracted is Map) {
@@ -397,7 +404,9 @@ class _ProviderListTileState extends State<ProviderListTile> {
         final prevVal = prevExtracted[key];
         final currVal = currExtracted[key];
         if (prevVal != currVal) {
-          changes.add('$key: ${truncateVal(prevVal)} → ${truncateVal(currVal)}');
+          changes.add(
+            '$key: ${truncateVal(prevVal)} → ${truncateVal(currVal)}',
+          );
         }
       }
 
@@ -513,9 +522,12 @@ class _ProviderListTileState extends State<ProviderListTile> {
     // If is Map, show key content
     if (extracted is Map) {
       if (extracted.isEmpty) return '{}';
-      final entries = extracted.entries.take(2).map((e) {
-        return '${e.key}: ${_truncate(e.value, 15)}';
-      }).join(', ');
+      final entries = extracted.entries
+          .take(2)
+          .map((e) {
+            return '${e.key}: ${_truncate(e.value, 15)}';
+          })
+          .join(', ');
       return extracted.length > 2 ? '$entries, ...' : entries;
     }
 

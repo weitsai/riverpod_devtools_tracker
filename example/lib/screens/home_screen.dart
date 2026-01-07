@@ -49,9 +49,10 @@ class HomeScreen extends ConsumerWidget {
                             Text(
                               language.nativeName,
                               style: TextStyle(
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                             if (language.nativeName != language.englishName)
@@ -155,12 +156,7 @@ class HomeScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -188,11 +184,7 @@ class HomeScreen extends ConsumerWidget {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: color,
-                ),
+                child: Icon(icon, size: 32, color: color),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -209,19 +201,12 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
             ],
           ),
         ),
@@ -230,8 +215,6 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _navigateTo(BuildContext context, Widget screen) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => screen));
   }
 }

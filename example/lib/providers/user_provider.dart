@@ -8,17 +8,9 @@ class User {
   final int age;
   final String email;
 
-  const User({
-    required this.name,
-    required this.age,
-    required this.email,
-  });
+  const User({required this.name, required this.age, required this.email});
 
-  User copyWith({
-    String? name,
-    int? age,
-    String? email,
-  }) {
+  User copyWith({String? name, int? age, String? email}) {
     return User(
       name: name ?? this.name,
       age: age ?? this.age,
@@ -54,7 +46,7 @@ class UserData extends _$UserData {
 
 /// Is logged in Provider
 @riverpod
-bool isLoggedIn(ref) {
+bool isLoggedIn(Ref ref) {
   final user = ref.watch(userDataProvider);
   return user != null;
 }

@@ -62,11 +62,7 @@ void main() {
               'column': 5,
               'function': 'main',
             },
-            {
-              'file': 'lib/app.dart',
-              'line': 20,
-              'function': 'build',
-            },
+            {'file': 'lib/app.dart', 'line': 20, 'function': 'build'},
           ],
         };
 
@@ -294,7 +290,10 @@ void main() {
           stackTrace: [
             StackTraceEntry(file: 'package:flutter/widgets.dart', line: 100),
             StackTraceEntry(
-                file: 'lib/screens/home.dart', line: 50, function: 'build'),
+              file: 'lib/screens/home.dart',
+              line: 50,
+              function: 'build',
+            ),
             StackTraceEntry(file: 'lib/main.dart', line: 10),
           ],
         );
@@ -477,7 +476,8 @@ void main() {
 
       test('returns true for package:flutter_riverpod/', () {
         final entry = StackTraceEntry(
-            file: 'package:flutter_riverpod/flutter_riverpod.dart');
+          file: 'package:flutter_riverpod/flutter_riverpod.dart',
+        );
         expect(entry.isRiverpodInternal, true);
       });
 
@@ -518,8 +518,9 @@ void main() {
       });
 
       test('handles package path', () {
-        final entry =
-            StackTraceEntry(file: 'package:my_app/src/screens/home.dart');
+        final entry = StackTraceEntry(
+          file: 'package:my_app/src/screens/home.dart',
+        );
         expect(entry.shortFileName, 'home.dart');
       });
     });
@@ -535,10 +536,7 @@ void main() {
       });
 
       test('returns file:line when no column', () {
-        final entry = StackTraceEntry(
-          file: 'lib/main.dart',
-          line: 42,
-        );
+        final entry = StackTraceEntry(file: 'lib/main.dart', line: 42);
         expect(entry.formattedLocation, 'main.dart:42');
       });
 
@@ -569,10 +567,7 @@ void main() {
       });
 
       test('formats with unknown function', () {
-        final entry = StackTraceEntry(
-          file: 'lib/main.dart',
-          line: 42,
-        );
+        final entry = StackTraceEntry(file: 'lib/main.dart', line: 42);
         expect(entry.toString(), 'lib/main.dart:42 in unknown');
       });
     });
@@ -606,10 +601,7 @@ void main() {
       });
 
       test('handles partial JSON', () {
-        final json = {
-          'location': 'main.dart:10',
-          'file': 'lib/main.dart',
-        };
+        final json = {'location': 'main.dart:10', 'file': 'lib/main.dart'};
 
         final entry = CallChainEntry.fromJson(json);
 

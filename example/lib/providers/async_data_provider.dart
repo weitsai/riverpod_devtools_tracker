@@ -4,7 +4,7 @@ part 'async_data_provider.g.dart';
 
 /// Simulates async data fetching - demonstrates FutureProvider state changes
 @riverpod
-Future<String> asyncData(ref) async {
+Future<String> asyncData(Ref ref) async {
   // Simulate network request delay
   await Future.delayed(const Duration(seconds: 2));
 

@@ -109,19 +109,12 @@ class UserScreen extends ConsumerWidget {
       children: [
         SizedBox(
           width: 80,
-          child: Text(
-            '$label:',
-            style: TextStyle(
-              color: Colors.grey[600],
-            ),
-          ),
+          child: Text('$label:', style: TextStyle(color: Colors.grey[600])),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -131,13 +124,11 @@ class UserScreen extends ConsumerWidget {
   // These methods will trigger state changes and be tracked by DevTools
   void _login(WidgetRef ref, BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    ref.read(userDataProvider.notifier).login(
-      User(
-        name: l10n.defaultUserName,
-        age: 25,
-        email: 'user@example.com',
-      ),
-    );
+    ref
+        .read(userDataProvider.notifier)
+        .login(
+          User(name: l10n.defaultUserName, age: 25, email: 'user@example.com'),
+        );
   }
 
   void _logout(WidgetRef ref) {
@@ -157,29 +148,32 @@ class UserScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.changeNameDialogTitle),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: l10n.newName,
-            border: const OutlineInputBorder(),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Text(l10n.changeNameDialogTitle),
+            content: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: l10n.newName,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l10n.cancel),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  ref
+                      .read(userDataProvider.notifier)
+                      .updateName(controller.text);
+                  Navigator.of(dialogContext).pop();
+                },
+                child: Text(l10n.confirm),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(userDataProvider.notifier).updateName(controller.text);
-              Navigator.of(dialogContext).pop();
-            },
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
     );
   }
 }

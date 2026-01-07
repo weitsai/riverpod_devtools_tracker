@@ -58,8 +58,9 @@ class SupportedLanguages {
   /// Get language by locale
   static Language fromLocale(Locale locale) {
     return all.firstWhere(
-      (lang) => lang.code == locale.languageCode &&
-                lang.countryCode == locale.countryCode,
+      (lang) =>
+          lang.code == locale.languageCode &&
+          lang.countryCode == locale.countryCode,
       orElse: () => english,
     );
   }

@@ -138,7 +138,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     if (!config.enabled) return;
 
     final providerName = _getProviderName(context);
-    
+
     // 注意：不在這裡清理堆疊，因為 provider 可能被 invalidate 後立即重新創建
     // 堆疊會在下一次 add 或有效 update 時自動更新
 
@@ -264,8 +264,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
       // 如果清理後還是超過限制，移除最舊的記錄
       if (_providerStacks.length > _maxStackCacheSize) {
-        final entries = _providerStacks.entries.toList()
-          ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+        final entries =
+            _providerStacks.entries.toList()
+              ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
 
         final toRemove = _providerStacks.length - _maxStackCacheSize;
         for (var i = 0; i < toRemove; i++) {
@@ -348,9 +349,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         callChain: callChain,
       );
     } else {
-      final locationStr = triggerLocation != null
-          ? ' at ${triggerLocation.location}'
-          : '';
+      final locationStr =
+          triggerLocation != null ? ' at ${triggerLocation.location}' : '';
       // ignore: avoid_print
       print('[Riverpod] $changeType: $providerName$locationStr');
     }
@@ -481,16 +481,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
       // Return full value as string for DevTools
       // DevTools extension will handle display truncation with expand/collapse
-      return {
-        'type': value.runtimeType.toString(),
-        'value': value.toString(),
-      };
+      return {'type': value.runtimeType.toString(), 'value': value.toString()};
     } catch (e) {
       // Last resort: just use toString
-      return {
-        'type': value.runtimeType.toString(),
-        'value': value.toString(),
-      };
+      return {'type': value.runtimeType.toString(), 'value': value.toString()};
     }
   }
 }

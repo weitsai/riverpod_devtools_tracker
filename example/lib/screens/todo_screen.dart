@@ -23,24 +23,25 @@ class TodoScreen extends ConsumerWidget {
         children: [
           _buildStatistics(completedCount, activeCount),
           Expanded(
-            child: todos.isEmpty
-                ? Center(
-                    child: Text(
-                      l10n.noTodosMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
+            child:
+                todos.isEmpty
+                    ? Center(
+                      child: Text(
+                        l10n.noTodosMessage,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
                       ),
+                    )
+                    : ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: (context, index) {
+                        final todo = todos[index];
+                        return _buildTodoItem(context, ref, todo);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: todos.length,
-                    itemBuilder: (context, index) {
-                      final todo = todos[index];
-                      return _buildTodoItem(context, ref, todo);
-                    },
-                  ),
           ),
           if (completedCount > 0)
             Padding(
@@ -77,11 +78,7 @@ class TodoScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatItem(l10n.pending, activeCount, Colors.orange),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey[300],
-                ),
+                Container(width: 1, height: 40, color: Colors.grey[300]),
                 _buildStatItem(l10n.completed, completedCount, Colors.green),
               ],
             ),
@@ -103,13 +100,7 @@ class TodoScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
       ],
     );
   }
@@ -143,39 +134,40 @@ class TodoScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.addTodoDialogTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: l10n.todoContent,
-            border: const OutlineInputBorder(),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Text(l10n.addTodoDialogTitle),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: l10n.todoContent,
+                border: const OutlineInputBorder(),
+              ),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  _addTodo(ref, value.trim());
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l10n.cancel),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final text = controller.text.trim();
+                  if (text.isNotEmpty) {
+                    _addTodo(ref, text);
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                child: Text(l10n.add),
+              ),
+            ],
           ),
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              _addTodo(ref, value.trim());
-              Navigator.of(dialogContext).pop();
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                _addTodo(ref, text);
-                Navigator.of(dialogContext).pop();
-              }
-            },
-            child: Text(l10n.add),
-          ),
-        ],
-      ),
     );
   }
 
