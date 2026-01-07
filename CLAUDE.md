@@ -8,6 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **核心包** (`lib/`) - 提供 `RiverpodDevToolsObserver` 來監聽 Provider 變化
 2. **DevTools 擴展** (`extension/devtools/`) - 預構建的 DevTools 擴展，自動被 Flutter DevTools 發現
 
+## 版本要求
+
+- **Dart SDK**: `>=3.7.0 <4.0.0`
+- **Flutter**: `>=3.27.0`
+- **Riverpod**: `>=3.1.0 <4.0.0`
+- **FVM**: 當前使用 Flutter `3.38.5`（配置在 [.fvmrc](.fvmrc)）
+
 ## 常用開發命令
 
 ### 主包開發
@@ -15,11 +22,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # 安裝依賴
 flutter pub get
 
-# 運行測試
+# 運行所有測試
 flutter test
+
+# 運行單個測試文件
+flutter test test/riverpod_devtools_observer_test.dart
+
+# 運行特定測試（使用 name 過濾）
+flutter test --name "should capture stack trace"
 
 # 分析代碼
 flutter analyze
+
+# 格式化代碼
+dart format .
+
+# 檢查發布準備狀況
+dart pub publish --dry-run
+```
+
+### 本地測試
+```bash
+# 在 example app 中測試修改
+cd example  # 如果有 example 目錄
+flutter pub get
+flutter run
+
+# 使用 path 依賴在其他項目中測試
+# 在測試項目的 pubspec.yaml 中：
+# riverpod_devtools_tracker:
+#   path: ../riverpod_devtools_tracker
 ```
 
 ### DevTools 擴展
@@ -95,6 +127,51 @@ Provider 變化 → RiverpodDevToolsObserver.didUpdateProvider()
 3. **位置過濾**：優先顯示用戶代碼位置，而非框架或 provider 定義位置
 4. **雙重輸出**：同時支援 DevTools 擴展和 console 輸出，方便不同調試場景
 
+## 生產環境最佳實踐
+
+**重要**：在生產環境中應該禁用追蹤器以優化性能。使用 `kDebugMode` 條件：
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
+
+void main() {
+  runApp(
+    ProviderScope(
+      observers: [
+        // 只在 debug 模式下啟用追蹤
+        if (kDebugMode)
+          RiverpodDevToolsObserver(
+            config: TrackerConfig.forPackage('your_app_name'),
+          ),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
+```
+
+### 性能優化建議
+
+如果在開發過程中遇到性能問題：
+
+1. **禁用 console 輸出**：`enableConsoleOutput: false`
+2. **減少調用鏈深度**：`maxCallChainDepth: 5`（默認 10）
+3. **增加過濾規則**：添加更多 `ignoredFilePatterns` 減少噪音
+4. **限制追蹤範圍**：只追蹤特定包的代碼
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app',
+    enableConsoleOutput: false,      // 更好的性能
+    maxCallChainDepth: 5,             // 更快的追蹤速度
+    ignoredFilePatterns: ['.g.dart', '.freezed.dart'],
+  ),
+)
+```
+
 ## 測試
 
 測試文件位於 [test/](test/) 目錄：
@@ -103,6 +180,30 @@ Provider 變化 → RiverpodDevToolsObserver.didUpdateProvider()
 
 總計 29 個測試，覆蓋核心功能、記憶體管理、值序列化等。
 
-## FVM 配置
+運行測試：
+```bash
+# 運行所有測試
+flutter test
 
-項目使用 FVM 管理 Flutter 版本，配置在 [.fvmrc](.fvmrc)。
+# 運行特定測試文件並顯示詳細輸出
+flutter test test/riverpod_devtools_observer_test.dart --reporter expanded
+```
+
+## 常見問題排查
+
+### DevTools 擴展未顯示
+1. 確認 `RiverpodDevToolsObserver` 已添加到 `ProviderScope` 的 observers 列表
+2. 重啟應用
+3. 檢查 DevTools 版本是否最新
+
+### 沒有狀態變化顯示
+1. 檢查 `packagePrefixes` 是否包含正確的包名（必須與 `pubspec.yaml` 中的 `name` 欄位一致）
+2. 啟用 `enableConsoleOutput: true` 檢查是否有追蹤記錄
+3. 確認 Provider 確實有變化
+
+### 調用鏈無位置信息
+1. 檢查包名是否匹配
+2. `ignoredFilePatterns` 可能過於嚴格
+3. 某些自動計算的 Provider 可能沒有特定觸發位置
+
+詳細故障排除指南請參考 [README.md](README.md#troubleshooting)

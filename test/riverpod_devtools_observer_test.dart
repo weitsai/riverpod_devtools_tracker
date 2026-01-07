@@ -123,6 +123,25 @@ void main() {
       container.dispose();
     });
   });
+
+  group('Value comparison and filtering', () {
+    test('skipUnchangedValues config is enabled by default', () {
+      final observer = _TestObserver();
+      expect(observer.config.skipUnchangedValues, true);
+    });
+
+    test('skipUnchangedValues can be configured', () {
+      final observerEnabled = _TestObserverWithConfig(
+        TrackerConfig.forPackage('test_app', skipUnchangedValues: true),
+      );
+      final observerDisabled = _TestObserverWithConfig(
+        TrackerConfig.forPackage('test_app', skipUnchangedValues: false),
+      );
+
+      expect(observerEnabled.config.skipUnchangedValues, true);
+      expect(observerDisabled.config.skipUnchangedValues, false);
+    });
+  });
 }
 
 /// Test observer that records events
@@ -152,8 +171,9 @@ final class _TestObserver extends RiverpodDevToolsObserver {
     Object? previousValue,
     Object? newValue,
   ) {
-    updateEvents.add(context);
     super.didUpdateProvider(context, previousValue, newValue);
+    // Add event after super call to respect filtering
+    updateEvents.add(context);
   }
 
   @override
@@ -179,4 +199,36 @@ enum _TestEnum {
   second,
   // ignore: unused_field
   third,
+}
+
+/// Test helper for custom config
+final class _TestObserverWithConfig extends RiverpodDevToolsObserver {
+  final List<ProviderObserverContext> addEvents = [];
+  final List<ProviderObserverContext> updateEvents = [];
+  final List<ProviderObserverContext> disposeEvents = [];
+
+  _TestObserverWithConfig(TrackerConfig config) : super(config: config);
+
+  @override
+  void didAddProvider(ProviderObserverContext context, Object? value) {
+    addEvents.add(context);
+    super.didAddProvider(context, value);
+  }
+
+  @override
+  void didUpdateProvider(
+    ProviderObserverContext context,
+    Object? previousValue,
+    Object? newValue,
+  ) {
+    super.didUpdateProvider(context, previousValue, newValue);
+    // Add event after super call to respect filtering
+    updateEvents.add(context);
+  }
+
+  @override
+  void didDisposeProvider(ProviderObserverContext context) {
+    disposeEvents.add(context);
+    super.didDisposeProvider(context);
+  }
 }

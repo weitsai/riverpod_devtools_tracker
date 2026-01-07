@@ -71,6 +71,16 @@ class TrackerConfig {
   /// Useful for ignoring generated files like `.g.dart`.
   final List<String> ignoredFilePatterns;
 
+  /// Whether to skip provider updates where the value hasn't changed
+  ///
+  /// When enabled, updates where previousValue and newValue are deeply equal
+  /// (same JSON serialization) will be filtered out. This reduces noise in
+  /// DevTools when providers update but the actual value remains the same.
+  ///
+  /// Comparison uses JSON serialization for deep equality check.
+  /// Default: true (filtering enabled)
+  final bool skipUnchangedValues;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -78,6 +88,7 @@ class TrackerConfig {
     this.prettyConsoleOutput = true,
     this.maxCallChainDepth = 10,
     this.maxValueLength = 200,
+    this.skipUnchangedValues = true,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -97,6 +108,7 @@ class TrackerConfig {
     bool prettyConsoleOutput = true,
     int maxCallChainDepth = 10,
     int maxValueLength = 200,
+    bool skipUnchangedValues = true,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
@@ -108,6 +120,7 @@ class TrackerConfig {
       prettyConsoleOutput: prettyConsoleOutput,
       maxCallChainDepth: maxCallChainDepth,
       maxValueLength: maxValueLength,
+      skipUnchangedValues: skipUnchangedValues,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -141,6 +154,7 @@ class TrackerConfig {
     bool? prettyConsoleOutput,
     int? maxCallChainDepth,
     int? maxValueLength,
+    bool? skipUnchangedValues,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
   }) {
@@ -151,6 +165,7 @@ class TrackerConfig {
       prettyConsoleOutput: prettyConsoleOutput ?? this.prettyConsoleOutput,
       maxCallChainDepth: maxCallChainDepth ?? this.maxCallChainDepth,
       maxValueLength: maxValueLength ?? this.maxValueLength,
+      skipUnchangedValues: skipUnchangedValues ?? this.skipUnchangedValues,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
