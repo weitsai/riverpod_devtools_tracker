@@ -1,7 +1,6 @@
 # Riverpod DevTools Tracker
 
 [![pub package](https://img.shields.io/pub/v/riverpod_devtools_tracker.svg)](https://pub.dev/packages/riverpod_devtools_tracker)
-[![Build Status](https://github.com/weitsai/riverpod_devtools_tracker/workflows/Test/badge.svg)](https://github.com/weitsai/riverpod_devtools_tracker/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
@@ -130,6 +129,8 @@ Once DevTools is open:
 1. Look for the **"Riverpod State Inspector"** tab in the top menu bar
 2. Click the tab to open the extension interface
 
+![DevTools Extension Setup](doc/images/devtools-setup.png)
+
 > **Tip**: If you don't see this tab, make sure:
 > - The package is properly installed and you've run `flutter pub get`
 > - `RiverpodDevToolsObserver` is added to your `ProviderScope`
@@ -154,6 +155,8 @@ The DevTools extension uses a two-panel layout:
   - Complete call chain with file locations
   - Function names in the call stack
   - Clickable file paths for code navigation
+
+![Code Location Tracking](doc/images/code-location-tracking.png)
 
 ### Step 4: Track and Debug State Changes
 
@@ -258,28 +261,22 @@ The extension provides a comprehensive debugging interface:
 - **Search & Filter** - Quickly find specific providers or changes
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
 
+### Provider State Filtering
+
+You can quickly filter specific Provider state changes using the search box:
+
+![Provider Filtering](doc/images/provider-filtering.png)
+
+You can also focus on a specific Provider for in-depth analysis:
+
+![Filter Specific Provider](doc/images/filter-specific-provider.png)
+
 ### Tips for Using the Extension
 
 - **Finding State Bugs**: Look at the call chain to understand why a state changed unexpectedly
 - **Performance Debugging**: Check if providers are updating too frequently
 - **Code Navigation**: Click on file paths in the call chain to jump to the code (if your IDE supports it)
 - **Filtering**: Use the `packagePrefixes` config to focus only on your app's code and filter out framework noise
-
-## Building the Extension
-
-To build the DevTools extension for development:
-
-```bash
-cd devtools_extension
-flutter pub get
-dart run devtools_extensions build_and_copy --source=. --dest=../extension/devtools
-```
-
-Or use the provided script:
-
-```bash
-./scripts/build_extension.sh
-```
 
 ## Troubleshooting
 

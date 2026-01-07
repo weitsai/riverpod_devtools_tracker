@@ -1,7 +1,6 @@
 # Riverpod DevTools Tracker
 
 [![pub package](https://img.shields.io/pub/v/riverpod_devtools_tracker.svg)](https://pub.dev/packages/riverpod_devtools_tracker)
-[![Build Status](https://github.com/weitsai/riverpod_devtools_tracker/workflows/Test/badge.svg)](https://github.com/weitsai/riverpod_devtools_tracker/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
@@ -130,6 +129,8 @@ DevTools 開啟後：
 1. 在頂部選單列中尋找 **"Riverpod State Inspector"** 標籤
 2. 點擊該標籤開啟擴展介面
 
+![DevTools 擴展設定](doc/images/devtools-setup.png)
+
 > **提示**：如果沒有看到這個標籤，請確認：
 > - 套件已正確安裝且執行過 `flutter pub get`
 > - `RiverpodDevToolsObserver` 已加入到 `ProviderScope`
@@ -154,6 +155,8 @@ DevTools 擴展採用雙欄式佈局：
   - 完整的調用鏈與檔案位置
   - 調用堆疊中的函數名稱
   - 可點擊的檔案路徑（導航到程式碼）
+
+![觀察 Provider 觸發位置](doc/images/code-location-tracking.png)
 
 ### 步驟 4：追蹤和除錯狀態變化
 
@@ -258,28 +261,22 @@ RiverpodDevToolsObserver(
 - **搜尋與過濾** - 快速找到特定的 provider 或變化
 - **GitHub 風格暗色主題** - 長時間除錯也不傷眼
 
+### Provider 狀態篩選
+
+你可以透過搜尋框快速篩選特定的 Provider 狀態變化：
+
+![Provider 狀態篩選](doc/images/provider-filtering.png)
+
+也可以專注於特定的 Provider 進行深入分析：
+
+![篩選特定 Provider](doc/images/filter-specific-provider.png)
+
 ### 使用技巧
 
 - **找出狀態 Bug**：查看調用鏈了解狀態為何意外變化
 - **效能除錯**：檢查 provider 是否更新過於頻繁
 - **程式碼導航**：點擊調用鏈中的檔案路徑跳轉到程式碼（如果你的 IDE 支援）
 - **過濾**：使用 `packagePrefixes` 設定只專注於你應用的程式碼，過濾掉框架雜訊
-
-## 建置擴展
-
-如需建置 DevTools 擴展進行開發：
-
-```bash
-cd devtools_extension
-flutter pub get
-dart run devtools_extensions build_and_copy --source=. --dest=../extension/devtools
-```
-
-或使用提供的腳本：
-
-```bash
-./scripts/build_extension.sh
-```
 
 ## 疑難排解
 
