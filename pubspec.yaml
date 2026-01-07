@@ -1,6 +1,6 @@
 name: riverpod_devtools_tracker
 description: Track Riverpod state changes with detailed call stacks. Debug easily by seeing exactly where state changes originated in your code.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/weitsai/riverpod_devtools_tracker
 repository: https://github.com/weitsai/riverpod_devtools_tracker
 issue_tracker: https://github.com/weitsai/riverpod_devtools_tracker/issues

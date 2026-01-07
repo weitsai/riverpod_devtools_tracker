@@ -1,3 +1,20 @@
+## 1.0.1
+
+**Release Date**: 2026-01-07
+
+### Documentation Improvements
+
+* **Enhanced README with visual guides**
+  - Added DevTools extension screenshots for better understanding
+  - Renamed image files to English for better accessibility
+  - Added visual guides for DevTools setup and configuration
+  - Added Provider filtering screenshots and documentation
+
+* **Removed development-only content**
+  - Removed Build Status badge (GitHub Actions workflow removed)
+  - Removed "Building the Extension" section (scripts not published in package)
+  - Cleaned up documentation to focus on end-user experience
+
 ## 1.0.0
 
 **Release Date**: 2026-01-07
