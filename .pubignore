@@ -1,0 +1,45 @@
+# Pub Ignore File
+# This file specifies files that should not be published to pub.dev
+
+# Optimization and iteration documentation (internal use only)
+OPTIMIZATION_SUMMARY.md
+DEVTOOLS_OPTIMIZATION.md
+FINAL_OPTIMIZATION_SUMMARY.md
+ITERATION_5_SUMMARY.md
+ITERATION_COMPLETE_SUMMARY.md
+OPTIMIZATION_COMPLETION_ANALYSIS.md
+READY_TO_PUBLISH.md
+STOP_OPTIMIZATION_RECOMMENDATION.md
+example/ITERATION_6_FINAL_REPORT.md
+
+# Claude configuration (development only)
+CLAUDE.md
+.claude/
+
+# Git files
+.git/
+.gitignore
+
+# IDE configurations
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts
+.dart_tool/
+.packages
+
+# Build directories (but keep extension/devtools/build for DevTools)
+build/
+!extension/devtools/build/
+
+# Coverage and test artifacts
+coverage/
+.test_cache/
+
+# macOS
+.DS_Store
+
+# FVM
+.fvm/
+.fvmrc
