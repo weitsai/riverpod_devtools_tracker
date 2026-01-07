@@ -100,6 +100,13 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    // Check if we should skip updates where the value hasn't changed
+    if (config.skipUnchangedValues &&
+        _areValuesEqual(previousValue, newValue)) {
+      // Value hasn't changed, skip this update event
+      return;
+    }
+
     final providerName = _getProviderName(context);
 
     // Capture current stack trace to track change source
@@ -485,6 +492,48 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     } catch (e) {
       // Last resort: just use toString
       return {'type': value.runtimeType.toString(), 'value': value.toString()};
+    }
+  }
+
+  /// Check if two values are deeply equal using JSON serialization
+  ///
+  /// Returns true if both values serialize to the same JSON string,
+  /// or if both values have the same string representation when
+  /// serialization fails.
+  ///
+  /// This method is used to filter out provider updates where the
+  /// value hasn't actually changed.
+  bool _areValuesEqual(Object? value1, Object? value2) {
+    // Handle null cases
+    if (value1 == null && value2 == null) return true;
+    if (value1 == null || value2 == null) return false;
+
+    // For primitive types, use direct comparison
+    if ((value1 is num || value1 is bool || value1 is String) &&
+        (value2 is num || value2 is bool || value2 is String)) {
+      return value1 == value2;
+    }
+
+    // For complex types, serialize and compare
+    try {
+      final serialized1 = _serializeValue(value1);
+      final serialized2 = _serializeValue(value2);
+
+      // Try to convert to JSON strings for deep comparison
+      try {
+        final json1 = jsonEncode(serialized1);
+        final json2 = jsonEncode(serialized2);
+        return json1 == json2;
+      } catch (_) {
+        // If JSON encoding fails, compare string representations
+        // This handles cases where serialized values contain non-JSON-safe types
+        final str1 = serialized1.toString();
+        final str2 = serialized2.toString();
+        return str1 == str2;
+      }
+    } catch (e) {
+      // If serialization fails, fall back to toString comparison
+      return value1.toString() == value2.toString();
     }
   }
 }

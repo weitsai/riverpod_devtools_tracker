@@ -64,6 +64,33 @@ void main() {
       expect(modified.maxCallChainDepth, original.maxCallChainDepth);
       expect(modified.ignoredPackagePrefixes, original.ignoredPackagePrefixes);
     });
+
+    test('default config has skipUnchangedValues enabled', () {
+      const config = TrackerConfig();
+      expect(config.skipUnchangedValues, true);
+    });
+
+    test('forPackage respects skipUnchangedValues parameter', () {
+      final configEnabled = TrackerConfig.forPackage(
+        'my_app',
+        skipUnchangedValues: true,
+      );
+      final configDisabled = TrackerConfig.forPackage(
+        'my_app',
+        skipUnchangedValues: false,
+      );
+
+      expect(configEnabled.skipUnchangedValues, true);
+      expect(configDisabled.skipUnchangedValues, false);
+    });
+
+    test('copyWith updates skipUnchangedValues', () {
+      const original = TrackerConfig(skipUnchangedValues: true);
+      final modified = original.copyWith(skipUnchangedValues: false);
+
+      expect(original.skipUnchangedValues, true);
+      expect(modified.skipUnchangedValues, false);
+    });
   });
 
   group('LocationInfo', () {
