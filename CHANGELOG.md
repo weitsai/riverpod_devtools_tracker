@@ -1,3 +1,15 @@
+## 1.0.2
+
+**Release Date**: 2026-01-07
+
+### Code Quality Improvements
+
+* **Refactored LocaleNotifier to follow Riverpod best practices**
+  - Removed `currentLanguage` public getter from LocaleNotifier
+  - All public API now exposed through `state` property only
+  - Fixed `avoid_public_notifier_properties` lint warning
+  - Locale to Language conversion moved to usage sites
+
 ## 1.0.1
 
 **Release Date**: 2026-01-07

@@ -40,7 +40,7 @@ Add `riverpod_devtools_tracker` to your `pubspec.yaml`:
 ```yaml
 dependencies:
   flutter_riverpod: ^3.1.0  # Required
-  riverpod_devtools_tracker: ^1.0.0
+  riverpod_devtools_tracker: ^1.0.2
 ```
 
 ### Step 2: Install Dependencies

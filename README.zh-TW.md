@@ -40,7 +40,7 @@
 ```yaml
 dependencies:
   flutter_riverpod: ^3.1.0  # 必要依賴
-  riverpod_devtools_tracker: ^1.0.0
+  riverpod_devtools_tracker: ^1.0.2
 ```
 
 ### 步驟 2：安裝依賴
