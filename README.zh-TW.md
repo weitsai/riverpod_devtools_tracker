@@ -324,12 +324,7 @@ RiverpodDevToolsObserver(
    ]
    ```
 
-## 系統需求
-
-- Flutter SDK >= 3.27.0
-- Dart SDK >= 3.7.0
-- flutter_riverpod >= 3.1.0
-
-## 授權
-
-MIT License - 詳見 [LICENSE](LICENSE) 檔案。
+## 貢獻者
+<a href="https://github.com/weitsai/riverpod_devtools_tracker/graphs/contributors ">
+  <img src="https://contrib.rocks/image?repo=weitsai/riverpod_devtools_tracker" />
+</a>
