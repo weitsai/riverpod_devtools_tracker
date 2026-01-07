@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final currentLanguage = ref.watch(localeProvider.notifier).currentLanguage;
+    final currentLanguage = ref.watch(localeProvider);
     final supportedLanguages = ref.watch(supportedLanguagesProvider);
 
     return Scaffold(
@@ -31,7 +31,8 @@ class HomeScreen extends ConsumerWidget {
             },
             itemBuilder: (BuildContext context) {
               return supportedLanguages.map((Language language) {
-                final isSelected = language == currentLanguage;
+                final isSelected =
+                    language == SupportedLanguages.fromLocale(currentLanguage);
                 return PopupMenuItem<Language>(
                   value: language,
                   child: Row(

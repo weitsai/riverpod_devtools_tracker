@@ -1,6 +1,6 @@
-include: package:flutter_lints/flutter.yaml
+analyzer:
+  plugins:
+    - riverpod_lint
 
-linter:
-  rules:
-    prefer_const_constructors: true
-    prefer_const_literals_to_create_immutables: true
+plugins:
+  riverpod_lint: 3.1.0

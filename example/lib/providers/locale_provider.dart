@@ -23,9 +23,6 @@ class LocaleNotifier extends _$LocaleNotifier {
   void setLocale(Locale locale) {
     state = locale;
   }
-
-  /// Get current language
-  Language get currentLanguage => SupportedLanguages.fromLocale(state);
 }
 
 /// Provider for the list of supported languages
