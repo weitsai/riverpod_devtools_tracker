@@ -413,19 +413,12 @@ RiverpodDevToolsObserver(
 )
 ```
 
-## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+## Contributors
 
-## Requirements
-
-- Flutter SDK >= 3.27.0
-- Dart SDK >= 3.7.0
-- flutter_riverpod >= 3.1.0
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
+<a href="https://github.com/weitsai/riverpod_devtools_tracker/graphs/contributors ">
+  <img src="https://contrib.rocks/image?repo=weitsai/riverpod_devtools_tracker" />
+</a>
 
 ## Support
 
