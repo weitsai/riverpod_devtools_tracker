@@ -489,7 +489,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: stateInfo.callChain.length,
       separatorBuilder:
-          (_, __) => const Divider(height: 1, color: Color(0xFF21262D)),
+          (_, _) => const Divider(height: 1, color: Color(0xFF21262D)),
       itemBuilder: (context, index) {
         final entry = stateInfo.callChain[index];
         final isFirst = index == 0;
@@ -552,7 +552,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: stateInfo.stackTrace.length,
       separatorBuilder:
-          (_, __) => const Divider(height: 1, color: Color(0xFF21262D)),
+          (_, _) => const Divider(height: 1, color: Color(0xFF21262D)),
       itemBuilder: (context, index) {
         final entry = stateInfo.stackTrace[index];
         final isUserCode = !entry.isFramework && !entry.isRiverpodInternal;
