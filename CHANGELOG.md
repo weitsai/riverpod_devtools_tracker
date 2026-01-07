@@ -4,10 +4,11 @@
 
 ### Package Optimizations
 
-* **Reduced package size by 98%** (from 11MB to 223KB)
+* **Optimized package content** (compressed size: ~12 MB)
   - Added comprehensive `.pubignore` to exclude development files
+  - Package includes pre-built DevTools extension for Flutter DevTools integration
   - Optimized published content for end users only
-  - Improved download and installation speed
+  - Note: Size is primarily from DevTools extension's web resources (required for functionality)
 
 * **Updated to latest development tools**
   - Upgraded `flutter_lints` to ^6.0.0 (main package and example app)
