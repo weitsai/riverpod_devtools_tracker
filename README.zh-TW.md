@@ -1,6 +1,7 @@
 # Riverpod DevTools Tracker
 
 [![pub package](https://img.shields.io/pub/v/riverpod_devtools_tracker.svg)](https://pub.dev/packages/riverpod_devtools_tracker)
+[![Build Status](https://github.com/weitsai/riverpod_devtools_tracker/workflows/Test/badge.svg)](https://github.com/weitsai/riverpod_devtools_tracker/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.27+-blue)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3.1+-purple)
