@@ -81,6 +81,48 @@ class TrackerConfig {
   /// Default: true (filtering enabled)
   final bool skipUnchangedValues;
 
+  /// Whitelist of Provider names to track (if not empty, only these will be tracked)
+  ///
+  /// When this set is not empty, ONLY providers whose names are in this set
+  /// will be tracked. This is useful for focusing on specific providers in
+  /// large applications.
+  ///
+  /// Example: `{'counterProvider', 'userProvider'}`
+  ///
+  /// Note: If both [trackedProviders] and [ignoredProviders] are set,
+  /// [trackedProviders] takes precedence (whitelist before blacklist).
+  final Set<String> trackedProviders;
+
+  /// Blacklist of Provider names to ignore
+  ///
+  /// Providers whose names are in this set will NOT be tracked.
+  /// This is useful for ignoring noisy or uninteresting providers.
+  ///
+  /// Example: `{'loggingProvider', 'analyticsProvider'}`
+  final Set<String> ignoredProviders;
+
+  /// Custom filter function for providers
+  ///
+  /// If provided, this function will be called for each provider to determine
+  /// whether it should be tracked. The function receives the provider name
+  /// and type, and should return true if the provider should be tracked.
+  ///
+  /// This allows for more complex filtering logic, such as:
+  /// - Filtering by provider type (e.g., only StateProvider)
+  /// - Pattern matching on provider names (e.g., names ending with 'Store')
+  /// - Combining multiple conditions
+  ///
+  /// Example:
+  /// ```dart
+  /// providerFilter: (name, type) {
+  ///   // Only track StateProvider and StateNotifierProvider
+  ///   return type.contains('State');
+  /// }
+  /// ```
+  ///
+  /// Note: This filter is applied AFTER [trackedProviders] and [ignoredProviders].
+  final bool Function(String providerName, String providerType)? providerFilter;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -89,6 +131,9 @@ class TrackerConfig {
     this.maxCallChainDepth = 10,
     this.maxValueLength = 200,
     this.skipUnchangedValues = true,
+    this.trackedProviders = const {},
+    this.ignoredProviders = const {},
+    this.providerFilter,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -109,6 +154,9 @@ class TrackerConfig {
     int maxCallChainDepth = 10,
     int maxValueLength = 200,
     bool skipUnchangedValues = true,
+    Set<String> trackedProviders = const {},
+    Set<String> ignoredProviders = const {},
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
@@ -121,6 +169,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth,
       maxValueLength: maxValueLength,
       skipUnchangedValues: skipUnchangedValues,
+      trackedProviders: trackedProviders,
+      ignoredProviders: ignoredProviders,
+      providerFilter: providerFilter,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -155,6 +206,9 @@ class TrackerConfig {
     int? maxCallChainDepth,
     int? maxValueLength,
     bool? skipUnchangedValues,
+    Set<String>? trackedProviders,
+    Set<String>? ignoredProviders,
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
   }) {
@@ -166,6 +220,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth ?? this.maxCallChainDepth,
       maxValueLength: maxValueLength ?? this.maxValueLength,
       skipUnchangedValues: skipUnchangedValues ?? this.skipUnchangedValues,
+      trackedProviders: trackedProviders ?? this.trackedProviders,
+      ignoredProviders: ignoredProviders ?? this.ignoredProviders,
+      providerFilter: providerFilter ?? this.providerFilter,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
