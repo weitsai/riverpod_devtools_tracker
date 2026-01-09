@@ -168,6 +168,8 @@ void main() {
     late StackTraceParser parser;
 
     setUp(() {
+      // Clear cache before each test to ensure clean state
+      StackTraceParser.clearCache();
       parser = StackTraceParser(TrackerConfig.forPackage('test_app'));
     });
 
