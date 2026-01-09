@@ -33,6 +33,8 @@ A powerful Flutter package that automatically tracks Riverpod state changes with
 - 🎨 **Beautiful DevTools Extension** - GitHub-style dark theme UI
 - ⚡ **Zero Configuration** - Just add the observer and you're done
 - 🔧 **Highly Configurable** - Customize what to track and how
+- 🎯 **Selective Provider Tracking** - Whitelist/blacklist specific providers or use custom filters
+- ⚡ **Optimized Performance** - Skip unchanged values and efficient value serialization
 
 ## Installation
 
@@ -234,6 +236,35 @@ RiverpodDevToolsObserver(
 )
 ```
 
+### Selective Provider Tracking
+
+You can filter which providers to track using whitelists, blacklists, or custom filters:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app',
+    // Whitelist: Only track these providers (takes precedence over blacklist)
+    trackedProviders: {'userProvider', 'cartProvider', 'authProvider'},
+
+    // Blacklist: Ignore these providers (only works when whitelist is empty)
+    ignoredProviders: {'debugProvider', 'tempProvider'},
+
+    // Custom filter: Advanced filtering based on name and type
+    providerFilter: (name, type) {
+      // Only track StateNotifierProvider and StateProvider
+      return type.contains('State');
+    },
+  ),
+)
+```
+
+**How filtering works:**
+1. If `trackedProviders` is not empty, only providers in the whitelist are tracked (blacklist is ignored)
+2. If `trackedProviders` is empty, providers in `ignoredProviders` are filtered out
+3. After whitelist/blacklist filtering, `providerFilter` function is applied if provided
+4. The `skipUnchangedValues` option (enabled by default) prevents tracking updates where the value hasn't actually changed
+
 ## Console Output
 
 When `enableConsoleOutput` is true, you'll see formatted output like this:
@@ -384,6 +415,91 @@ RiverpodDevToolsObserver(
       'package:my_common/',
       'package:my_features/',
     ],
+  ),
+)
+```
+
+### Selective Provider Tracking Use Cases
+
+**Use Case 1: Debug Specific Feature**
+
+When debugging a specific feature, track only related providers:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    // Only track providers related to shopping cart
+    trackedProviders: {
+      'cartProvider',
+      'cartItemsProvider',
+      'cartTotalProvider',
+      'checkoutProvider',
+    },
+  ),
+)
+```
+
+**Use Case 2: Exclude Noisy Providers**
+
+Filter out high-frequency or debug-only providers:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    // Ignore providers that update frequently and create noise
+    ignoredProviders: {
+      'mousePositionProvider',  // Updates on every mouse move
+      'timerProvider',           // Updates every second
+      'debugLogProvider',        // Debug-only provider
+    },
+  ),
+)
+```
+
+**Use Case 3: Track by Provider Type**
+
+Focus on specific types of providers:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    // Only track state-holding providers, ignore computed ones
+    providerFilter: (name, type) {
+      return type.contains('StateProvider') ||
+             type.contains('StateNotifierProvider') ||
+             type.contains('NotifierProvider');
+    },
+  ),
+)
+```
+
+**Use Case 4: Combined Filtering**
+
+Use multiple filtering strategies together:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    // Track only authentication and user-related providers
+    trackedProviders: {
+      'authProvider',
+      'userProvider',
+      'sessionProvider',
+      'permissionsProvider',
+    },
+    // But exclude the token refresh provider (too noisy)
+    ignoredProviders: {
+      'tokenRefreshProvider',
+    },
+    // And apply custom filter for additional control
+    providerFilter: (name, type) {
+      // Skip any provider that ends with 'Cache'
+      return !name.endsWith('Cache');
+    },
   ),
 )
 ```

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:meta/meta.dart';
 
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
@@ -72,7 +73,13 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   void didAddProvider(ProviderObserverContext context, Object? value) {
     if (!config.enabled) return;
 
-    final providerName = _getProviderName(context);
+    final providerName = getProviderName(context);
+    final providerType = getProviderType(context);
+
+    // 檢查是否應該追蹤此 provider
+    if (!shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
 
     // 捕獲初始堆疊（用於異步 Provider）
     final stackTrace = StackTrace.current;
@@ -84,7 +91,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
     _postStateChange(
       providerName: providerName,
-      providerType: _getProviderType(context),
+      providerType: getProviderType(context),
       changeType: 'add',
       currentValue: value,
       triggerLocation: triggerLocation,
@@ -100,14 +107,20 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    final providerName = getProviderName(context);
+    final providerType = getProviderType(context);
+
+    // 檢查是否應該追蹤此 provider
+    if (!shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
+
     // Check if we should skip updates where the value hasn't changed
     if (config.skipUnchangedValues &&
         _areValuesEqual(previousValue, newValue)) {
       // Value hasn't changed, skip this update event
       return;
     }
-
-    final providerName = _getProviderName(context);
 
     // Capture current stack trace to track change source
     final stackTrace = StackTrace.current;
@@ -131,7 +144,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
     _postStateChange(
       providerName: providerName,
-      providerType: _getProviderType(context),
+      providerType: getProviderType(context),
       changeType: 'update',
       previousValue: previousValue,
       currentValue: newValue,
@@ -144,14 +157,20 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   void didDisposeProvider(ProviderObserverContext context) {
     if (!config.enabled) return;
 
-    final providerName = _getProviderName(context);
+    final providerName = getProviderName(context);
+    final providerType = getProviderType(context);
+
+    // 檢查是否應該追蹤此 provider
+    if (!shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
 
     // 注意：不在這裡清理堆疊，因為 provider 可能被 invalidate 後立即重新創建
     // 堆疊會在下一次 add 或有效 update 時自動更新
 
     _postStateChange(
       providerName: providerName,
-      providerType: _getProviderType(context),
+      providerType: providerType,
       changeType: 'dispose',
     );
   }
@@ -164,11 +183,19 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    final providerName = getProviderName(context);
+    final providerType = getProviderType(context);
+
+    // 檢查是否應該追蹤此 provider
+    if (!shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
+
     final callChain = _parser.parseCallChain(stackTrace);
 
     _postStateChange(
-      providerName: _getProviderName(context),
-      providerType: _getProviderType(context),
+      providerName: providerName,
+      providerType: providerType,
       changeType: 'error',
       currentValue: {
         'error': error.toString(),
@@ -179,7 +206,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   }
 
   /// Get provider name
-  String _getProviderName(ProviderObserverContext context) {
+  @protected
+  String getProviderName(ProviderObserverContext context) {
     final provider = context.provider;
 
     // Try to get name from provider.name
@@ -201,7 +229,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   }
 
   /// Get provider type
-  String _getProviderType(ProviderObserverContext context) {
+  @protected
+  String getProviderType(ProviderObserverContext context) {
     final typeName = context.provider.runtimeType.toString();
 
     if (typeName.contains('StateProvider')) {
@@ -235,6 +264,37 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     if (callChain.isEmpty) return false;
     // 檢查是否至少有一個不是 provider 文件的位置
     return callChain.any((loc) => !_isProviderFile(loc.file));
+  }
+
+  /// 檢查是否應該追蹤此 provider
+  ///
+  /// 過濾邏輯順序：
+  /// 1. 檢查白名單 [trackedProviders] - 如果白名單不為空，只追蹤白名單中的（優先級最高）
+  /// 2. 檢查黑名單 [ignoredProviders] - 如果在黑名單中則不追蹤
+  /// 3. 應用自定義過濾函數 [providerFilter] - 如果提供且返回 false 則不追蹤
+  ///
+  /// Returns true if the provider should be tracked
+  @protected
+  bool shouldTrackProvider(String providerName, String providerType) {
+    // 1. 檢查白名單（如果白名單不為空，只追蹤白名單中的，忽略黑名單）
+    if (config.trackedProviders.isNotEmpty) {
+      if (!config.trackedProviders.contains(providerName)) {
+        return false;
+      }
+      // 在白名單中，繼續檢查自定義過濾函數
+    } else {
+      // 2. 白名單為空時，檢查黑名單
+      if (config.ignoredProviders.contains(providerName)) {
+        return false;
+      }
+    }
+
+    // 3. 應用自定義過濾函數
+    if (config.providerFilter != null) {
+      return config.providerFilter!(providerName, providerType);
+    }
+
+    return true;
   }
 
   /// 保存有效的堆疊信息
@@ -445,6 +505,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Serialize value for transmission
   /// Note: We send full values to DevTools (no truncation here).
   /// Truncation is only done for console output in _formatValue.
+  ///
+  /// Performance optimization: This method now validates serializability
+  /// without performing unnecessary encode-decode cycles (Issue #2).
   dynamic _serializeValue(Object? value) {
     if (value == null) return null;
 
@@ -459,10 +522,13 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         return value.name;
       }
 
-      // Try to convert to JSON (for simple Map/List with primitives)
+      // Handle Map/List - validate serializability without double encoding
       if (value is Map || value is List) {
         try {
-          return json.decode(json.encode(value));
+          // Validate that the value can be JSON encoded
+          json.encode(value);
+          // Return original value directly (no decode needed)
+          return value;
         } catch (_) {
           // If JSON serialization fails, convert to string representation
           return {
@@ -477,10 +543,13 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         final dynamic dynamicValue = value;
         if (dynamicValue.toJson != null) {
           final jsonResult = dynamicValue.toJson();
-          // Try to make it JSON-safe
+          // Validate serializability
           try {
-            return json.decode(json.encode(jsonResult));
+            json.encode(jsonResult);
+            // Return serialized result directly (no decode needed)
+            return jsonResult;
           } catch (_) {
+            // If encoding fails, return as-is and let caller handle
             return jsonResult;
           }
         }
@@ -503,6 +572,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ///
   /// This method is used to filter out provider updates where the
   /// value hasn't actually changed.
+  ///
+  /// Performance optimization: Directly encodes values without going through
+  /// _serializeValue to avoid double encoding (Issue #2).
   bool _areValuesEqual(Object? value1, Object? value2) {
     // Handle null cases
     if (value1 == null && value2 == null) return true;
@@ -514,25 +586,26 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       return value1 == value2;
     }
 
-    // For complex types, serialize and compare
+    // For complex types, directly encode and compare JSON strings
+    // This avoids double encoding through _serializeValue
     try {
-      final serialized1 = _serializeValue(value1);
-      final serialized2 = _serializeValue(value2);
-
-      // Try to convert to JSON strings for deep comparison
+      final json1 = jsonEncode(value1);
+      final json2 = jsonEncode(value2);
+      return json1 == json2;
+    } catch (_) {
+      // If direct JSON encoding fails, try with toJson() if available
       try {
-        final json1 = jsonEncode(serialized1);
-        final json2 = jsonEncode(serialized2);
-        return json1 == json2;
-      } catch (_) {
-        // If JSON encoding fails, compare string representations
-        // This handles cases where serialized values contain non-JSON-safe types
-        final str1 = serialized1.toString();
-        final str2 = serialized2.toString();
-        return str1 == str2;
-      }
-    } catch (e) {
-      // If serialization fails, fall back to toString comparison
+        final dynamic dyn1 = value1;
+        final dynamic dyn2 = value2;
+
+        if (dyn1.toJson != null && dyn2.toJson != null) {
+          final json1 = jsonEncode(dyn1.toJson());
+          final json2 = jsonEncode(dyn2.toJson());
+          return json1 == json2;
+        }
+      } catch (_) {}
+
+      // Fall back to string comparison
       return value1.toString() == value2.toString();
     }
   }
