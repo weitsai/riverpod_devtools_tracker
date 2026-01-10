@@ -356,6 +356,7 @@ The extension provides a comprehensive debugging interface:
 - **Value Comparison** - Before/after values displayed side by side for easy debugging
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
+- **Event Export** - Export events to JSON or CSV format for offline analysis and sharing
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
 
 ### Provider State Filtering
@@ -374,6 +375,59 @@ You can also focus on a specific Provider for in-depth analysis:
 - **Performance Debugging**: Check if providers are updating too frequently
 - **Code Navigation**: Click on file paths in the call chain to jump to the code (if your IDE supports it)
 - **Filtering**: Use the `packagePrefixes` config to focus only on your app's code and filter out framework noise
+
+### Event Export
+
+The DevTools extension supports exporting tracked events for offline analysis and sharing with team members.
+
+**How to Export:**
+
+1. Click the **Download** icon in the top toolbar (next to the language switcher)
+2. Choose your preferred format:
+   - **JSON Format** - Complete event data with metadata, perfect for programmatic analysis
+   - **CSV Format** - Timeline format for spreadsheet analysis in Excel, Google Sheets, etc.
+3. The file will be automatically downloaded with a timestamp in the filename
+
+**JSON Export Format:**
+
+```json
+{
+  "exportedAt": "2024-01-15T10:30:00.000Z",
+  "totalEvents": 42,
+  "events": [
+    {
+      "timestamp": "2024-01-15T10:29:45.123Z",
+      "changeType": "UPDATE",
+      "providerName": "counterProvider",
+      "providerType": "StateProvider<int>",
+      "previousValue": 0,
+      "currentValue": 1,
+      "location": "lib/screens/home_screen.dart:45",
+      "callChain": [
+        {
+          "file": "lib/screens/home_screen.dart",
+          "line": 45,
+          "function": "_incrementCounter"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**CSV Export Format:**
+
+```csv
+Timestamp,Change Type,Provider,Value,Location
+2024-01-15T10:29:45.123Z,UPDATE,counterProvider,1,lib/screens/home_screen.dart:45
+```
+
+**Use Cases:**
+
+- 📊 **Offline Analysis** - Export events and analyze them in your preferred tools
+- 🤝 **Team Collaboration** - Share debugging sessions with teammates
+- 📝 **Bug Reports** - Attach event logs to bug reports for better context
+- 📈 **Performance Analysis** - Import CSV into spreadsheet tools for data visualization
 
 ## Troubleshooting
 

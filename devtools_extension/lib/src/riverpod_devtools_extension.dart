@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
@@ -335,6 +337,15 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   widget.localeManager.toggleLocale();
                 },
                 tooltip: 'Toggle Language',
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(
+                  Icons.download,
+                  color: Color(0xFF8B949E),
+                ),
+                onPressed: _providerStates.isEmpty ? null : _showExportDialog,
+                tooltip: 'Export Events',
               ),
               const SizedBox(width: 8),
               IconButton(
@@ -1072,5 +1083,109 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   void _hideSearchSuggestionsOverlay() {
     _searchOverlay?.remove();
     _searchOverlay = null;
+  }
+
+  /// Show export dialog
+  void _showExportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text(
+          'Export Events',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.code, color: Color(0xFF6366F1)),
+              title: const Text(
+                'JSON Format',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: Text(
+                'Complete event data with metadata',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _exportAsJson();
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.table_chart, color: Color(0xFF6366F1)),
+              title: const Text(
+                'CSV Format',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: Text(
+                'Timeline format for spreadsheet analysis',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _exportAsCsv();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Export as JSON format
+  void _exportAsJson() {
+    final data = {
+      'exportedAt': DateTime.now().toIso8601String(),
+      'totalEvents': _providerStates.length,
+      'events': _providerStates.map((state) => state.toJson()).toList(),
+    };
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+    _downloadFile('riverpod_events_$timestamp.json', jsonString);
+  }
+
+  /// Export as CSV format (timeline)
+  void _exportAsCsv() {
+    final buffer = StringBuffer();
+    buffer.writeln('Timestamp,Change Type,Provider,Value,Location');
+
+    for (final state in _providerStates) {
+      final formattedValue = _formatValueForCsv(state.currentValue);
+      buffer.writeln([
+        state.timestamp.toIso8601String(),
+        state.changeType,
+        state.providerName,
+        formattedValue.replaceAll(',', ';'), // Escape commas
+        state.location ?? 'N/A',
+      ].join(','));
+    }
+
+    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+    _downloadFile('riverpod_events_$timestamp.csv', buffer.toString());
+  }
+
+  /// Format value for CSV export
+  String _formatValueForCsv(dynamic value) {
+    if (value == null) return 'null';
+    if (value is String) return value;
+    if (value is Map) {
+      return json.encode(value);
+    }
+    return value.toString();
+  }
+
+  /// Trigger browser download
+  void _downloadFile(String filename, String content) {
+    final bytes = utf8.encode(content);
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', filename)
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 }
