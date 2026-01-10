@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
+import 'performance_metrics.dart';
 
 /// Riverpod DevTools Observer
 ///
@@ -38,6 +39,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Event counter
   int _eventCounter = 0;
 
+  /// Performance statistics (only collected when enabled)
+  final PerformanceStatistics _performanceStats = PerformanceStatistics();
+
   /// 記錄每個 Provider 最近一次有效的觸發堆疊（用於異步 Provider）
   /// Key: Provider 的名稱
   /// 這個堆疊會在每次有有效用戶代碼的操作時更新
@@ -68,27 +72,66 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     _parser = StackTraceParser(this.config);
   }
 
+  /// Get current performance statistics
+  ///
+  /// Returns the accumulated performance statistics for all tracked providers.
+  /// Only available when [TrackerConfig.collectPerformanceMetrics] is enabled.
+  PerformanceStatistics get performanceStats => _performanceStats;
+
   @override
   void didAddProvider(ProviderObserverContext context, Object? value) {
     if (!config.enabled) return;
 
     final providerName = _getProviderName(context);
+    final totalStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    totalStopwatch?.start();
 
     // 捕獲初始堆疊（用於異步 Provider）
+    final stackParseStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    stackParseStopwatch?.start();
+
     final stackTrace = StackTrace.current;
     final callChain = _parser.parseCallChain(stackTrace);
     final triggerLocation = _parser.findTriggerLocation(stackTrace);
 
+    stackParseStopwatch?.stop();
+
     // 保存有效的堆疊信息，供後續異步完成時使用
     _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
+
+    // Measure serialization time
+    final serializeStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    serializeStopwatch?.start();
+
+    final serializedValue = _serializeValue(value);
+
+    serializeStopwatch?.stop();
+    totalStopwatch?.stop();
+
+    // Create performance metrics if enabled
+    TrackingMetrics? metrics;
+    if (config.collectPerformanceMetrics && totalStopwatch != null &&
+        stackParseStopwatch != null && serializeStopwatch != null) {
+      final valueSize = serializedValue.toString().length;
+      metrics = TrackingMetrics(
+        stackTraceParsingTime: stackParseStopwatch.elapsed,
+        valueSerializationTime: serializeStopwatch.elapsed,
+        totalTime: totalStopwatch.elapsed,
+        callChainDepth: callChain.length,
+        valueSize: valueSize,
+      );
+      _performanceStats.recordOperation(providerName, metrics);
+    }
 
     _postStateChange(
       providerName: providerName,
       providerType: _getProviderType(context),
       changeType: 'add',
       currentValue: value,
+      serializedValue: serializedValue,
       triggerLocation: triggerLocation,
       callChain: callChain,
+      metrics: metrics,
     );
   }
 
@@ -101,11 +144,18 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     if (!config.enabled) return;
 
     final providerName = _getProviderName(context);
+    final totalStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    totalStopwatch?.start();
 
     // Capture current stack trace to track change source
+    final stackParseStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    stackParseStopwatch?.start();
+
     final stackTrace = StackTrace.current;
     var callChain = _parser.parseCallChain(stackTrace);
     var triggerLocation = _parser.findTriggerLocation(stackTrace);
+
+    stackParseStopwatch?.stop();
 
     // 檢查當前堆疊是否有有效的用戶代碼（非 provider 文件）
     final hasUserCode = _hasValidUserCode(callChain);
@@ -122,14 +172,43 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       }
     }
 
+    // Measure serialization time
+    final serializeStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
+    serializeStopwatch?.start();
+
+    final serializedPreviousValue = _serializeValue(previousValue);
+    final serializedCurrentValue = _serializeValue(newValue);
+
+    serializeStopwatch?.stop();
+    totalStopwatch?.stop();
+
+    // Create performance metrics if enabled
+    TrackingMetrics? metrics;
+    if (config.collectPerformanceMetrics && totalStopwatch != null &&
+        stackParseStopwatch != null && serializeStopwatch != null) {
+      final valueSize = serializedCurrentValue.toString().length +
+                        serializedPreviousValue.toString().length;
+      metrics = TrackingMetrics(
+        stackTraceParsingTime: stackParseStopwatch.elapsed,
+        valueSerializationTime: serializeStopwatch.elapsed,
+        totalTime: totalStopwatch.elapsed,
+        callChainDepth: callChain.length,
+        valueSize: valueSize,
+      );
+      _performanceStats.recordOperation(providerName, metrics);
+    }
+
     _postStateChange(
       providerName: providerName,
       providerType: _getProviderType(context),
       changeType: 'update',
       previousValue: previousValue,
+      serializedPreviousValue: serializedPreviousValue,
       currentValue: newValue,
+      serializedValue: serializedCurrentValue,
       triggerLocation: triggerLocation,
       callChain: callChain,
+      metrics: metrics,
     );
   }
 
@@ -283,8 +362,11 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     required String changeType,
     Object? previousValue,
     Object? currentValue,
+    dynamic serializedPreviousValue,
+    dynamic serializedValue,
     LocationInfo? triggerLocation,
     List<LocationInfo>? callChain,
+    TrackingMetrics? metrics,
   }) {
     try {
       final eventData = <String, dynamic>{
@@ -292,8 +374,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         'providerName': providerName,
         'providerType': providerType,
         'changeType': changeType,
-        'previousValue': _serializeValue(previousValue),
-        'currentValue': _serializeValue(currentValue),
+        'previousValue': serializedPreviousValue ?? _serializeValue(previousValue),
+        'currentValue': serializedValue ?? _serializeValue(currentValue),
         'timestamp': DateTime.now().toIso8601String(),
       };
 
@@ -308,6 +390,16 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       // Call chain
       if (callChain != null && callChain.isNotEmpty) {
         eventData['callChain'] = callChain.map((l) => l.toJson()).toList();
+      }
+
+      // Performance metrics
+      if (metrics != null) {
+        eventData['performanceMetrics'] = metrics.toJson();
+      }
+
+      // Add overall performance statistics if metrics collection is enabled
+      if (config.collectPerformanceMetrics) {
+        eventData['performanceStats'] = _performanceStats.toJson();
       }
 
       // Send to DevTools using postEvent

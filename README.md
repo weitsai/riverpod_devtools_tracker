@@ -234,6 +234,33 @@ RiverpodDevToolsObserver(
 )
 ```
 
+### Performance Metrics Collection
+
+You can enable performance metrics collection to analyze the overhead of the tracker itself:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app_name',
+    collectPerformanceMetrics: true,  // Enable performance tracking
+  ),
+)
+```
+
+When enabled, the tracker will collect detailed metrics including:
+- **Stack trace parsing time**: Time spent analyzing call stacks
+- **Value serialization time**: Time spent converting provider values
+- **Total tracking time**: Overall time for each tracking operation
+- **Call chain depth**: Number of stack frames captured
+- **Value size**: Size of serialized values
+
+These metrics are displayed in the **Performance** tab of the DevTools extension, showing:
+- Overall statistics (total operations, total time, average time)
+- Per-provider statistics (update count, average/min/max times)
+- Breakdown of parsing vs serialization time
+
+**Note**: Performance metrics collection adds a small overhead. It's recommended to disable it in production builds.
+
 ## Console Output
 
 When `enableConsoleOutput` is true, you'll see formatted output like this:
@@ -255,14 +282,28 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 
 ## DevTools Extension Features
 
-The extension provides a comprehensive debugging interface:
+The extension provides a comprehensive debugging interface with two main tabs:
 
+### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
 - **Location Info** - Shows the exact file and line number where each change originated
 - **Value Comparison** - Before/after values displayed side by side for easy debugging
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
+
+### Performance Tab
+- **Overall Statistics** - Total operations, total time, and average time across all providers
+- **Per-Provider Metrics** - Detailed performance breakdown for each provider:
+  - Update count and frequency
+  - Average, minimum, and maximum tracking time
+  - Stack trace parsing time
+  - Value serialization time
+- **Performance Indicators** - Visual feedback (Excellent/Good/Fair/Slow) based on tracking overhead
+- **Expandable Details** - Click on any provider to see comprehensive metrics
+
+### Common Features
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
+- **Tab Navigation** - Easily switch between state inspection and performance analysis
 
 ### Provider State Filtering
 
