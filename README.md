@@ -413,6 +413,79 @@ RiverpodDevToolsObserver(
 )
 ```
 
+### Periodic Memory Cleanup
+
+The package implements automatic periodic memory cleanup (Issue #9) to prevent memory buildup in long-running applications.
+
+**How It Works:**
+- Automatically starts a timer that periodically cleans up old stack traces
+- Removes stack traces older than the expiration duration
+- Enforces a maximum cache size limit
+- Runs in the background without impacting app performance
+
+**Configuration:**
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    // Enable/disable periodic cleanup (default: true)
+    enablePeriodicCleanup: true,
+
+    // How often to run cleanup (default: 30 seconds)
+    cleanupInterval: const Duration(seconds: 30),
+
+    // How long to keep stack traces (default: 60 seconds)
+    stackExpirationDuration: const Duration(seconds: 60),
+
+    // Maximum number of stack traces to keep (default: 100)
+    maxStackCacheSize: 100,
+  ),
+)
+```
+
+**Benefits:**
+- ✅ **Prevents memory leaks** in long-running apps
+- ✅ **Stable memory footprint** - no memory spikes
+- ✅ **Configurable strategy** - adjust to your needs
+- ✅ **Zero performance impact** - cleanup runs in background
+
+**Memory Management:**
+- Cleanup runs every 30 seconds by default
+- Removes stack traces older than 60 seconds
+- Hard limit of 100 stack traces in cache
+- Estimated memory usage: ~20-50KB total
+
+**Manual Disposal:**
+
+If you need to manually clean up the observer (e.g., when disposing a custom ProviderScope):
+
+```dart
+final observer = RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage('my_app'),
+);
+
+// ... use observer ...
+
+// Clean up when done
+observer.dispose(); // Cancels timer and clears cache
+```
+
+**When to Disable:**
+
+You might want to disable periodic cleanup if:
+- You're debugging and want to keep all stack history
+- Your app is short-lived (not running for extended periods)
+- You want to manually control cleanup timing
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'my_app',
+    enablePeriodicCleanup: false, // Disable automatic cleanup
+  ),
+)
+```
 
 ## Contributors
 

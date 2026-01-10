@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -51,11 +52,18 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// 堆疊記錄的過期時間（毫秒）
   static const int _stackExpirationMs = 60000; // 60 seconds
 
+  /// Periodic cleanup timer (Issue #9)
+  Timer? _cleanupTimer;
+
   /// Creates a new Riverpod DevTools Observer
   ///
   /// The [config] parameter controls tracking behavior. If not provided,
   /// uses default settings which may not filter stack traces effectively.
   /// It's recommended to use [TrackerConfig.forPackage] for proper filtering.
+  ///
+  /// **Periodic Memory Cleanup (Issue #9)**:
+  /// If [TrackerConfig.enablePeriodicCleanup] is true, automatically starts
+  /// a periodic timer to clean up expired stack traces from memory.
   ///
   /// Example:
   /// ```dart
@@ -66,6 +74,19 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
+
+    // Start periodic cleanup if enabled (Issue #9)
+    if (this.config.enablePeriodicCleanup) {
+      _startCleanupTimer();
+    }
+  }
+
+  /// Starts the periodic cleanup timer (Issue #9)
+  void _startCleanupTimer() {
+    _cleanupTimer = Timer.periodic(
+      config.cleanupInterval,
+      (_) => _cleanupExpiredStacks(),
+    );
   }
 
   @override
@@ -252,26 +273,34 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     }
   }
 
-  /// 清理過期的堆疊記錄
+  /// Cleans up expired stack traces from memory (Issue #9)
+  ///
+  /// This method can be called:
+  /// 1. Periodically by the cleanup timer (if enabled)
+  /// 2. After didUpdateProvider when cache size exceeds limit
+  ///
+  /// It removes stack traces that are older than [stackExpirationDuration]
+  /// and enforces the [maxStackCacheSize] limit.
   void _cleanupExpiredStacks() {
-    // 如果緩存大小超過限制，清理所有過期記錄
-    if (_providerStacks.length > _maxStackCacheSize) {
-      final now = DateTime.now();
-      _providerStacks.removeWhere((key, value) {
-        final age = now.difference(value.timestamp).inMilliseconds;
-        return age > _stackExpirationMs;
-      });
+    if (_providerStacks.isEmpty) return;
 
-      // 如果清理後還是超過限制，移除最舊的記錄
-      if (_providerStacks.length > _maxStackCacheSize) {
-        final entries =
-            _providerStacks.entries.toList()
-              ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+    final now = DateTime.now();
+    final threshold = now.subtract(config.stackExpirationDuration);
 
-        final toRemove = _providerStacks.length - _maxStackCacheSize;
-        for (var i = 0; i < toRemove; i++) {
-          _providerStacks.remove(entries[i].key);
-        }
+    // Remove expired entries
+    _providerStacks.removeWhere((key, value) {
+      return value.timestamp.isBefore(threshold);
+    });
+
+    // If still over limit, remove oldest entries (FIFO)
+    if (_providerStacks.length > config.maxStackCacheSize) {
+      final entriesToRemove =
+          _providerStacks.length - config.maxStackCacheSize;
+      final sortedEntries = _providerStacks.entries.toList()
+        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+
+      for (var i = 0; i < entriesToRemove; i++) {
+        _providerStacks.remove(sortedEntries[i].key);
       }
     }
   }
@@ -486,6 +515,28 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       // Last resort: just use toString
       return {'type': value.runtimeType.toString(), 'value': value.toString()};
     }
+  }
+
+  /// Disposes the observer and cleans up resources (Issue #9)
+  ///
+  /// This method should be called when the observer is no longer needed
+  /// to prevent memory leaks. It cancels the cleanup timer and clears
+  /// all cached data.
+  ///
+  /// **Note**: This method must be called manually when you're done with
+  /// the observer, as ProviderObserver doesn't have a built-in dispose
+  /// mechanism.
+  ///
+  /// Example:
+  /// ```dart
+  /// final observer = RiverpodDevToolsObserver(...);
+  /// // ... use observer ...
+  /// observer.dispose(); // Clean up when done
+  /// ```
+  void dispose() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    _providerStacks.clear();
   }
 }
 

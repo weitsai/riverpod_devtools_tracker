@@ -71,6 +71,41 @@ class TrackerConfig {
   /// Useful for ignoring generated files like `.g.dart`.
   final List<String> ignoredFilePatterns;
 
+  /// Whether to enable periodic memory cleanup
+  ///
+  /// When enabled, a timer will periodically clean up old stack traces
+  /// from the cache to prevent memory buildup. This is especially useful
+  /// for long-running apps or apps with many provider updates.
+  ///
+  /// Default: true
+  final bool enablePeriodicCleanup;
+
+  /// Interval between automatic cleanup runs
+  ///
+  /// Only used when [enablePeriodicCleanup] is true.
+  /// The cleanup timer will run every [cleanupInterval] to remove
+  /// expired stack traces from the cache.
+  ///
+  /// Default: 30 seconds
+  final Duration cleanupInterval;
+
+  /// How long stack traces are kept before being considered expired
+  ///
+  /// Stack traces older than this duration will be removed during cleanup.
+  /// Increase this value if you need to keep stack history for longer,
+  /// decrease it to free memory more aggressively.
+  ///
+  /// Default: 60 seconds
+  final Duration stackExpirationDuration;
+
+  /// Maximum number of stack traces to keep in cache
+  ///
+  /// When the cache exceeds this size, oldest entries will be removed.
+  /// This provides a hard limit on memory usage.
+  ///
+  /// Default: 100
+  final int maxStackCacheSize;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -87,6 +122,10 @@ class TrackerConfig {
       'dart:',
     ],
     this.ignoredFilePatterns = const [],
+    this.enablePeriodicCleanup = true,
+    this.cleanupInterval = const Duration(seconds: 30),
+    this.stackExpirationDuration = const Duration(seconds: 60),
+    this.maxStackCacheSize = 100,
   });
 
   /// Create a config for a specific package
@@ -100,6 +139,10 @@ class TrackerConfig {
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
+    bool enablePeriodicCleanup = true,
+    Duration cleanupInterval = const Duration(seconds: 30),
+    Duration stackExpirationDuration = const Duration(seconds: 60),
+    int maxStackCacheSize = 100,
   }) {
     return TrackerConfig(
       enabled: enabled,
@@ -118,6 +161,10 @@ class TrackerConfig {
         ...additionalIgnored,
       ],
       ignoredFilePatterns: ignoredFilePatterns,
+      enablePeriodicCleanup: enablePeriodicCleanup,
+      cleanupInterval: cleanupInterval,
+      stackExpirationDuration: stackExpirationDuration,
+      maxStackCacheSize: maxStackCacheSize,
     );
   }
 
@@ -143,6 +190,10 @@ class TrackerConfig {
     int? maxValueLength,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
+    bool? enablePeriodicCleanup,
+    Duration? cleanupInterval,
+    Duration? stackExpirationDuration,
+    int? maxStackCacheSize,
   }) {
     return TrackerConfig(
       enabled: enabled ?? this.enabled,
@@ -154,6 +205,11 @@ class TrackerConfig {
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
+      enablePeriodicCleanup: enablePeriodicCleanup ?? this.enablePeriodicCleanup,
+      cleanupInterval: cleanupInterval ?? this.cleanupInterval,
+      stackExpirationDuration:
+          stackExpirationDuration ?? this.stackExpirationDuration,
+      maxStackCacheSize: maxStackCacheSize ?? this.maxStackCacheSize,
     );
   }
 }
