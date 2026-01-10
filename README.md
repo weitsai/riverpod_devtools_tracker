@@ -258,6 +258,7 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 The extension provides a comprehensive debugging interface:
 
 - **Provider List** - Real-time view of all state changes with timestamps
+- **Timeline View** - Visual timeline showing events over time with zoom and pan controls
 - **Location Info** - Shows the exact file and line number where each change originated
 - **Value Comparison** - Before/after values displayed side by side for easy debugging
 - **Call Chain** - Complete call stack for tracing the execution path
@@ -273,6 +274,45 @@ You can quickly filter specific Provider state changes using the search box:
 You can also focus on a specific Provider for in-depth analysis:
 
 ![Filter Specific Provider](doc/images/filter-specific-provider.png)
+
+### Timeline View
+
+The extension includes a powerful timeline visualization to help you understand when and how your providers change over time.
+
+**How to Access:**
+
+1. Click the **Timeline** icon in the view mode selector (next to the language switcher)
+2. Switch between **List View** (default) and **Timeline View** as needed
+
+**Timeline Features:**
+
+- **Visual Timeline** - See all state changes plotted on a time axis
+- **Color-Coded Events**:
+  - 🟢 Green: Provider added (ADD)
+  - 🔵 Purple: Provider updated (UPDATE)
+  - 🟠 Orange: Provider disposed (DISPOSE)
+  - 🔴 Red: Provider error (ERROR)
+- **Provider Lanes** - Each provider gets its own horizontal lane for easy tracking
+- **Interactive Controls**:
+  - 🔍 Zoom In/Out - Magnify specific time periods
+  - ↔️ Pan - Drag horizontally to navigate through time
+  - 🔄 Reset - Return to default view
+- **Event Selection** - Click any event to view details in the side panel
+- **Time Labels** - Precise timestamps shown below the timeline
+
+**Use Cases:**
+
+- 📊 **Identify Patterns** - Spot high-frequency updates or unusual update sequences
+- ⏱️ **Performance Analysis** - See which providers update most frequently
+- 🐛 **Debug Timing Issues** - Understand the temporal relationship between state changes
+- 📈 **Visualize State Flow** - Track how state propagates through your application
+
+**Tips:**
+
+- Use zoom to focus on a specific time window
+- Look for clusters of events that might indicate performance issues
+- Different provider lanes make it easy to track individual provider behavior
+- Combine with filters to focus on specific providers or change types
 
 ### Tips for Using the Extension
 
