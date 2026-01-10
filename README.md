@@ -413,6 +413,61 @@ RiverpodDevToolsObserver(
 )
 ```
 
+## Testing
+
+This package includes comprehensive test coverage to ensure reliability and quality.
+
+### Test Categories
+
+**Unit Tests** (`test/riverpod_devtools_tracker_test.dart`)
+- TrackerConfig creation and configuration
+- StackTraceParser functionality
+- LocationInfo serialization
+
+**Integration Tests** (`test/riverpod_devtools_observer_test.dart`)
+- Observer lifecycle and event tracking
+- Value serialization
+- Memory management
+
+**End-to-End Tests** (`test/integration/end_to_end_test.dart`)
+- Complete provider lifecycle (add, update, dispose)
+- Multiple provider tracking
+- FutureProvider and StreamProvider support
+- NotifierProvider integration
+- Error handling
+- Config filtering
+
+### Running Tests
+
+```bash
+# Run all tests
+flutter test
+
+# Run specific test file
+flutter test test/integration/end_to_end_test.dart
+
+# Run tests with coverage
+flutter test --coverage
+
+# View coverage report
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
+```
+
+### Test Coverage
+
+- **Total Tests**: 40+
+- **Coverage**: Comprehensive coverage of core functionality
+- **Test Types**: Unit, Integration, and End-to-End tests
+
+The test suite verifies:
+✅ Provider lifecycle tracking
+✅ Stack trace parsing and location detection
+✅ Value serialization and deserialization
+✅ Config filtering and customization
+✅ Memory management and cleanup
+✅ Support for all provider types (Provider, FutureProvider, StreamProvider, NotifierProvider)
+✅ Error handling and edge cases
 
 ## Contributors
 
