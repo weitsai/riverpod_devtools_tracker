@@ -11,7 +11,11 @@ import 'locale_manager.dart';
 import 'models/provider_state_info.dart';
 import 'widgets/provider_list_tile.dart';
 import 'widgets/state_detail_panel.dart';
+import 'widgets/timeline_view.dart';
 import 'theme/extension_theme.dart';
+
+/// View mode for the extension
+enum ViewMode { list, timeline }
 
 class RiverpodDevToolsExtension extends StatefulWidget {
   final LocaleManager localeManager;
@@ -49,6 +53,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
   // Hide auto-computed updates (hidden by default)
   bool _hideAutoComputed = true;
+
+  // View mode (list or timeline)
+  ViewMode _viewMode = ViewMode.list;
 
   // Search suggestions
   final FocusNode _searchFocusNode = FocusNode();
@@ -339,6 +346,42 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 tooltip: 'Toggle Language',
               ),
               const SizedBox(width: 8),
+              SegmentedButton<ViewMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ViewMode.list,
+                    icon: Icon(Icons.list, size: 18),
+                    tooltip: 'List View',
+                  ),
+                  ButtonSegment(
+                    value: ViewMode.timeline,
+                    icon: Icon(Icons.timeline, size: 18),
+                    tooltip: 'Timeline View',
+                  ),
+                ],
+                selected: {_viewMode},
+                onSelectionChanged: (Set<ViewMode> newSelection) {
+                  setState(() => _viewMode = newSelection.first);
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Color(0xFF6366F1).withValues(alpha: 0.3);
+                    }
+                    return const Color(0xFF161B22);
+                  }),
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Color(0xFF6366F1);
+                    }
+                    return const Color(0xFF8B949E);
+                  }),
+                  side: WidgetStateProperty.all(
+                    const BorderSide(color: Color(0xFF30363D)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(
                   Icons.download,
@@ -616,6 +659,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       );
     }
 
+    // Switch between list and timeline view
+    if (_viewMode == ViewMode.timeline) {
+      return _buildTimelineView();
+    }
+
     return SelectionArea(
       child: Row(
         children: [
@@ -639,6 +687,30 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimelineView() {
+    return Row(
+      children: [
+        Expanded(
+          child: TimelineView(
+            events: _filteredProviders,
+            selectedEvent: _selectedProvider,
+            onEventSelected: (event) => setState(() => _selectedProvider = event),
+          ),
+        ),
+        if (_selectedProvider != null) ...[
+          Container(width: 1, color: const Color(0xFF30363D)),
+          SizedBox(
+            width: 400,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: StateDetailPanel(stateInfo: _selectedProvider!),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
