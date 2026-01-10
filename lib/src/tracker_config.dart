@@ -228,6 +228,15 @@ class TrackerConfig {
   /// Default: 100 stack traces
   final int maxStackCacheSize;
 
+  /// Whether to collect performance metrics
+  ///
+  /// When enabled, the tracker will collect detailed performance metrics
+  /// including parsing times, serialization times, and update frequencies.
+  /// These metrics can be viewed in the DevTools extension's Performance panel.
+  ///
+  /// Recommended: false for production, true for development/debugging
+  final bool collectPerformanceMetrics;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -254,6 +263,7 @@ class TrackerConfig {
       'dart:',
     ],
     this.ignoredFilePatterns = const [],
+    this.collectPerformanceMetrics = false,
   }) : _trackedProviderNames = trackedProviders,
        _ignoredProviderNames = ignoredProviders;
 
@@ -308,6 +318,7 @@ class TrackerConfig {
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
+    bool collectPerformanceMetrics = false,
   }) {
     // Extract provider names from references
     final trackedNames =
@@ -346,6 +357,7 @@ class TrackerConfig {
         ...additionalIgnored,
       ],
       ignoredFilePatterns: ignoredFilePatterns,
+      collectPerformanceMetrics: collectPerformanceMetrics,
     );
   }
 
@@ -381,6 +393,7 @@ class TrackerConfig {
     int? maxStackCacheSize,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
+    bool? collectPerformanceMetrics,
   }) {
     return TrackerConfig(
       enabled: enabled ?? this.enabled,
@@ -406,6 +419,8 @@ class TrackerConfig {
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
+      collectPerformanceMetrics:
+          collectPerformanceMetrics ?? this.collectPerformanceMetrics,
     );
   }
 }
