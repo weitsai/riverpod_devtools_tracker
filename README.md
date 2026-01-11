@@ -274,6 +274,25 @@ You can also focus on a specific Provider for in-depth analysis:
 
 ![Filter Specific Provider](doc/images/filter-specific-provider.png)
 
+#### Search Modes
+
+The search box supports two modes:
+
+**Simple Search (Default)**
+- Case-insensitive substring matching
+- Quick and easy filtering
+- Example: typing "counter" will match "counterProvider", "myCounterState", etc.
+
+**Regex Search**
+- Advanced pattern matching using regular expressions
+- Click the search mode icon (text fields ⇄ code icon) to switch modes
+- Supports full regex syntax for complex patterns
+- Real-time validation with error messages for invalid patterns
+- Examples:
+  - `^counter.*Provider$` - Matches providers starting with "counter" and ending with "Provider"
+  - `(user|auth).*State` - Matches providers containing "user" or "auth" followed by "State"
+  - `\d+Provider` - Matches providers with numbers followed by "Provider"
+
 ### Tips for Using the Extension
 
 - **Finding State Bugs**: Look at the call chain to understand why a state changed unexpectedly
