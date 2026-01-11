@@ -521,7 +521,7 @@ The Graph View helps you understand provider relationships in your application:
 
 1. **Switch to Graph Tab**: Click the "Graph" tab in the toolbar
 2. **Interact with Your App**: As you use your app, the graph will populate with providers
-3. **View Type Statistics**: 
+3. **View Type Statistics**:
    - The toolbar shows a count for each provider type with its corresponding color
    - Quickly see the distribution of provider types in your app (e.g., "Notifier: 3", "Future: 2", "Stream: 1")
    - Each type chip uses the same color as its nodes in the graph
@@ -542,6 +542,25 @@ The Graph View helps you understand provider relationships in your application:
 7. **Clear Network**: Click the clear button to start fresh
 
 **Note**: The graph shows *inferred* dependencies based on temporal proximity of updates, not the actual Riverpod dependency graph (which is not accessible through the public API).
+
+#### Search Modes
+
+The search box supports two modes:
+
+**Simple Search (Default)**
+- Case-insensitive substring matching
+- Quick and easy filtering
+- Example: typing "counter" will match "counterProvider", "myCounterState", etc.
+
+**Regex Search**
+- Advanced pattern matching using regular expressions
+- Click the search mode icon (text fields ⇄ code icon) to switch modes
+- Supports full regex syntax for complex patterns
+- Real-time validation with error messages for invalid patterns
+- Examples:
+  - `^counter.*Provider$` - Matches providers starting with "counter" and ending with "Provider"
+  - `(user|auth).*State` - Matches providers containing "user" or "auth" followed by "State"
+  - `\d+Provider` - Matches providers with numbers followed by "Provider"
 
 ### Tips for Using the Extension
 

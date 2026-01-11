@@ -21,6 +21,15 @@ import 'theme/extension_theme.dart';
 /// View mode for the extension
 enum ViewMode { list, timeline }
 
+/// Search mode for provider filtering
+enum SearchMode {
+  /// Simple string matching (case-insensitive substring)
+  simple,
+
+  /// Regular expression matching
+  regex,
+}
+
 class RiverpodDevToolsExtension extends StatefulWidget {
   final LocaleManager localeManager;
 
@@ -38,6 +47,9 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   StreamSubscription<Event>? _extensionEventSubscription;
   bool _isConnected = false;
   String _searchText = ''; // Search input text
+  SearchMode _searchMode = SearchMode.simple; // Search mode (simple/regex)
+  RegExp? _searchRegex; // Compiled regex for search
+  String? _regexError; // Regex compilation error message
   final Set<String> _selectedProviders =
       {}; // Selected providers (multi-select)
   bool _showAllHistory = true;
@@ -368,9 +380,22 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     if (_searchText.isEmpty) {
       return allNames;
     }
-    return allNames
-        .where((name) => name.toLowerCase().contains(_searchText.toLowerCase()))
-        .toList();
+
+    if (_searchMode == SearchMode.regex) {
+      // Use regex matching
+      if (_searchRegex == null) {
+        // Invalid regex, return empty list
+        return [];
+      }
+      return allNames.where((name) => _searchRegex!.hasMatch(name)).toList();
+    } else {
+      // Simple substring matching (case-insensitive)
+      return allNames
+          .where(
+            (name) => name.toLowerCase().contains(_searchText.toLowerCase()),
+          )
+          .toList();
+    }
   }
 
   int get _totalChanges => _providerStates.length;
@@ -581,16 +606,36 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                     }).toList(),
               ),
             ),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: CompositedTransformTarget(
-                  link: _searchLayerLink,
-                  child: TextField(
+              Row(
+                children: [
+                  Expanded(
+                    child: CompositedTransformTarget(
+                      link: _searchLayerLink,
+                      child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
                     onChanged: (value) {
-                      setState(() => _searchText = value);
+                      setState(() {
+                        _searchText = value;
+                        _regexError = null; // Clear previous error
+
+                        if (_searchMode == SearchMode.regex) {
+                          // Try to compile regex
+                          if (value.isEmpty) {
+                            _searchRegex = null;
+                          } else {
+                            try {
+                              _searchRegex = RegExp(value);
+                            } catch (e) {
+                              _searchRegex = null;
+                              _regexError = e.toString();
+                            }
+                          }
+                        }
+                      });
                       _showSearchSuggestionsOverlay();
                     },
                     style: const TextStyle(color: Colors.white),
@@ -606,6 +651,86 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Search mode toggle button
+                          PopupMenuButton<SearchMode>(
+                            icon: Icon(
+                              _searchMode == SearchMode.regex
+                                  ? Icons.code
+                                  : Icons.text_fields,
+                              size: 18,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            tooltip: _searchMode == SearchMode.regex
+                                ? 'Switch to Simple Search'
+                                : 'Switch to Regex Search',
+                            color: const Color(0xFF161B22),
+                            onSelected: (mode) {
+                              setState(() {
+                                _searchMode = mode;
+                                _regexError = null;
+                                _searchRegex = null;
+
+                                // Recompile regex if switching to regex mode
+                                if (mode == SearchMode.regex &&
+                                    _searchText.isNotEmpty) {
+                                  try {
+                                    _searchRegex = RegExp(_searchText);
+                                  } catch (e) {
+                                    _regexError = e.toString();
+                                  }
+                                }
+                              });
+                              _showSearchSuggestionsOverlay();
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: SearchMode.simple,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.text_fields,
+                                      size: 18,
+                                      color: _searchMode == SearchMode.simple
+                                          ? const Color(0xFF58A6FF)
+                                          : Colors.white.withValues(alpha: 0.7),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Simple Search',
+                                      style: TextStyle(
+                                        color: _searchMode == SearchMode.simple
+                                            ? const Color(0xFF58A6FF)
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: SearchMode.regex,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.code,
+                                      size: 18,
+                                      color: _searchMode == SearchMode.regex
+                                          ? const Color(0xFF58A6FF)
+                                          : Colors.white.withValues(alpha: 0.7),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Regex Search',
+                                      style: TextStyle(
+                                        color: _searchMode == SearchMode.regex
+                                            ? const Color(0xFF58A6FF)
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                           if (_searchText.isNotEmpty)
                             IconButton(
                               icon: const Icon(Icons.clear, size: 18),
@@ -613,6 +738,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                                 setState(() {
                                   _searchText = '';
                                   _searchController.clear();
+                                  _regexError = null;
+                                  _searchRegex = null;
                                 });
                                 _showSearchSuggestionsOverlay();
                               },
@@ -713,6 +840,33 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   },
                 ),
               ),
+                ],
+              ),
+              // Regex error message
+              if (_regexError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 12),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 14,
+                        color: Color(0xFFF85149),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Invalid regex: ${_regexError!.replaceAll('FormatException: ', '').split('\n').first}',
+                          style: const TextStyle(
+                            color: Color(0xFFF85149),
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ],

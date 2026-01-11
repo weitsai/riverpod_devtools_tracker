@@ -481,6 +481,25 @@ RiverpodDevToolsObserver(
 
 **注意**：圖表顯示的是基於更新時序推斷的依賴關係，而非實際的 Riverpod 依賴圖（無法透過公開 API 存取）。
 
+#### 搜尋模式
+
+搜尋框支援兩種模式：
+
+**簡單搜尋（預設）**
+- 不區分大小寫的子字串匹配
+- 快速且簡單的篩選
+- 範例：輸入 "counter" 會匹配 "counterProvider"、"myCounterState" 等
+
+**正規表達式搜尋**
+- 使用正規表達式進行進階模式匹配
+- 點擊搜尋模式圖示（文字欄位 ⇄ 程式碼圖示）來切換模式
+- 支援完整的 regex 語法處理複雜模式
+- 即時驗證，無效模式會顯示錯誤訊息
+- 範例：
+  - `^counter.*Provider$` - 匹配以 "counter" 開頭且以 "Provider" 結尾的 provider
+  - `(user|auth).*State` - 匹配包含 "user" 或 "auth" 後接 "State" 的 provider
+  - `\d+Provider` - 匹配包含數字後接 "Provider" 的 provider
+
 ### 使用技巧
 
 - **找出狀態 Bug**：查看調用鏈了解狀態為何意外變化
