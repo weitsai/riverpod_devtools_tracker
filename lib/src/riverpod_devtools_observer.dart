@@ -445,24 +445,28 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Serialize value for transmission
   /// Note: We send full values to DevTools (no truncation here).
   /// Truncation is only done for console output in _formatValue.
+  ///
+  /// Optimized to avoid double encoding - validates serializability with
+  /// json.encode() but returns the original value instead of decoding.
   dynamic _serializeValue(Object? value) {
     if (value == null) return null;
 
     try {
-      // Return primitive types directly
+      // Directly return primitive types
       if (value is num || value is bool || value is String) {
         return value;
       }
 
-      // Enum types
+      // Handle Enum types
       if (value is Enum) {
-        return value.name;
+        return {'type': 'Enum', 'name': value.name};
       }
 
-      // Try to convert to JSON (for simple Map/List with primitives)
+      // Handle Map/List - Validate serializability without double encoding
       if (value is Map || value is List) {
         try {
-          return json.decode(json.encode(value));
+          json.encode(value); // Validate serializability
+          return value;       // Return original value (no decode)
         } catch (_) {
           // If JSON serialization fails, convert to string representation
           return {
@@ -472,26 +476,21 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         }
       }
 
-      // Try to call toJson if available
+      // Handle objects with a toJson() method
       try {
         final dynamic dynamicValue = value;
-        if (dynamicValue.toJson != null) {
-          final jsonResult = dynamicValue.toJson();
-          // Try to make it JSON-safe
-          try {
-            return json.decode(json.encode(jsonResult));
-          } catch (_) {
-            return jsonResult;
-          }
-        }
-      } catch (_) {}
+        final jsonResult = dynamicValue.toJson();
+        json.encode(jsonResult); // Validate serializability
+        return jsonResult;       // Return serialized result (no decode)
+      } catch (_) {
+        // Fallback to string representation if no toJson or serialization fails
+      }
 
       // Return full value as string for DevTools
       // DevTools extension will handle display truncation with expand/collapse
       return {'type': value.runtimeType.toString(), 'value': value.toString()};
     } catch (e) {
-      // Last resort: just use toString
-      return {'type': value.runtimeType.toString(), 'value': value.toString()};
+      return {'error': 'Serialization failed: ${e.toString()}'};
     }
   }
 
