@@ -31,6 +31,7 @@ A powerful Flutter package that automatically tracks Riverpod state changes with
 - 📍 **Code Location Detection** - Shows exactly where state changes originated
 - 📜 **Call Chain Visualization** - View the complete call stack
 - 🎨 **Beautiful DevTools Extension** - GitHub-style dark theme UI
+- 🔄 **Visual Diff Highlighting** - GitHub-style diff view for state changes
 - ⚡ **Zero Configuration** - Just add the observer and you're done
 - 🔧 **Highly Configurable** - Customize what to track and how
 
@@ -260,9 +261,29 @@ The extension provides a comprehensive debugging interface with two main views:
 ### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
 - **Location Info** - Shows the exact file and line number where each change originated
-- **Value Comparison** - Before/after values displayed side by side for easy debugging
+- **Value Comparison** - Before/after values displayed in three view modes:
+  - **Tree View** - Hierarchical JSON tree view with syntax highlighting
+  - **Diff View** - GitHub-style diff highlighting showing exactly what changed
+  - **Text View** - Plain text view with expand/collapse for long values
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
+
+#### Visual Diff Highlighting
+
+The Diff View provides GitHub-style visual diff for state changes:
+
+**Features:**
+- **Color-Coded Changes** - Green for additions, red for removals, yellow for modifications
+- **Inline Diff** - Shows changes line-by-line with +/- indicators
+- **Tree Diff** - Expandable tree view showing nested changes
+- **Smart Comparison** - Deep object and array comparison
+- **Copy Support** - Double-tap to copy values or paths
+
+**How to Use:**
+1. Click any state change in the Provider List
+2. In the State Details panel, click the view mode toggle button
+3. Select "Diff View" to see highlighted changes
+4. For complex objects, switch between Inline and Tree modes
 
 ### Graph View Tab
 - **Provider Dependency Graph** - Interactive visualization of provider relationships

@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
 import '../../l10n/app_localizations.dart';
 import '../models/provider_state_info.dart';
+import '../widgets/diff/inline_diff_view.dart';
+import '../widgets/diff/tree_diff_view.dart';
 
 class StateDetailPanel extends StatefulWidget {
   final ProviderStateInfo stateInfo;
@@ -12,12 +17,15 @@ class StateDetailPanel extends StatefulWidget {
   State<StateDetailPanel> createState() => _StateDetailPanelState();
 }
 
-enum _ViewMode { tree, text }
+enum _ViewMode { tree, text, diff }
+
+enum _DiffDisplayMode { inline, tree }
 
 class _StateDetailPanelState extends State<StateDetailPanel> {
   bool _isBeforeExpanded = false;
   bool _isAfterExpanded = false;
   _ViewMode _viewMode = _ViewMode.tree;
+  _DiffDisplayMode _diffDisplayMode = _DiffDisplayMode.inline;
 
   ProviderStateInfo get stateInfo => widget.stateInfo;
 
@@ -279,9 +287,11 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      _viewMode = _viewMode == _ViewMode.text
-                          ? _ViewMode.tree
-                          : _ViewMode.text;
+                      _viewMode = switch (_viewMode) {
+                        _ViewMode.tree => _ViewMode.diff,
+                        _ViewMode.diff => _ViewMode.text,
+                        _ViewMode.text => _ViewMode.tree,
+                      };
                     });
                   },
                   child: Container(
@@ -300,15 +310,21 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _viewMode == _ViewMode.tree
-                              ? Icons.account_tree
-                              : Icons.notes,
+                          switch (_viewMode) {
+                            _ViewMode.tree => Icons.account_tree,
+                            _ViewMode.diff => Icons.compare_arrows,
+                            _ViewMode.text => Icons.notes,
+                          },
                           size: 16,
                           color: const Color(0xFF3FB950),
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _viewMode == _ViewMode.tree ? 'Tree View' : 'Text View',
+                          switch (_viewMode) {
+                            _ViewMode.tree => 'Tree View',
+                            _ViewMode.diff => 'Diff View',
+                            _ViewMode.text => 'Text View',
+                          },
                           style: const TextStyle(
                             color: Color(0xFF3FB950),
                             fontSize: 12,
@@ -323,47 +339,164 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildValueBox(
-                  context,
-                  AppLocalizations.of(context)!.before,
-                  stateInfo.formattedPreviousValue,
-                  stateInfo.formattedCurrentValue,
-                  const Color(0xFFF85149),
-                  isExpanded: _isBeforeExpanded,
-                  viewMode: _viewMode,
-                  onToggle:
-                      () => setState(
-                        () => _isBeforeExpanded = !_isBeforeExpanded,
-                      ),
+          if (_viewMode == _ViewMode.diff)
+            _buildDiffView()
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildValueBox(
+                    context,
+                    AppLocalizations.of(context)!.before,
+                    stateInfo.formattedPreviousValue,
+                    stateInfo.formattedCurrentValue,
+                    const Color(0xFFF85149),
+                    isExpanded: _isBeforeExpanded,
+                    viewMode: _viewMode,
+                    onToggle:
+                        () => setState(
+                          () => _isBeforeExpanded = !_isBeforeExpanded,
+                        ),
+                  ),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.arrow_forward, color: Color(0xFF8B949E)),
-              ),
-              Expanded(
-                child: _buildValueBox(
-                  context,
-                  AppLocalizations.of(context)!.after,
-                  stateInfo.formattedCurrentValue,
-                  stateInfo.formattedPreviousValue,
-                  const Color(0xFF3FB950),
-                  isExpanded: _isAfterExpanded,
-                  viewMode: _viewMode,
-                  onToggle:
-                      () =>
-                          setState(() => _isAfterExpanded = !_isAfterExpanded),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(Icons.arrow_forward, color: Color(0xFF8B949E)),
                 ),
-              ),
-            ],
-          ),
+                Expanded(
+                  child: _buildValueBox(
+                    context,
+                    AppLocalizations.of(context)!.after,
+                    stateInfo.formattedCurrentValue,
+                    stateInfo.formattedPreviousValue,
+                    const Color(0xFF3FB950),
+                    isExpanded: _isAfterExpanded,
+                    viewMode: _viewMode,
+                    onToggle:
+                        () =>
+                            setState(() => _isAfterExpanded = !_isAfterExpanded),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
+  }
+
+  Widget _buildDiffView() {
+    // Parse current and previous values to compute diff
+    final oldValue = _parseValue(stateInfo.formattedPreviousValue);
+    final newValue = _parseValue(stateInfo.formattedCurrentValue);
+
+    // Compute diff
+    final diff = DiffEngine.diff(oldValue, newValue);
+
+    // If no changes, show a message
+    if (!diff.hasChanges) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D1117),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF30363D)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: Color(0xFF3FB950), size: 18),
+            SizedBox(width: 8),
+            Text(
+              'No changes detected',
+              style: TextStyle(
+                color: Color(0xFF8B949E),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show diff view based on diff type
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 500),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1117),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF30363D)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
+        child: diff is MapDiff || diff is ListDiff
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tab selector for inline/tree view
+                  Row(
+                    children: [
+                      _buildDiffModeTab('Inline', _DiffDisplayMode.inline),
+                      const SizedBox(width: 8),
+                      _buildDiffModeTab('Tree', _DiffDisplayMode.tree),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _diffDisplayMode == _DiffDisplayMode.inline
+                      ? InlineDiffView(diff: diff)
+                      : TreeDiffView(diff: diff),
+                ],
+              )
+            : InlineDiffView(diff: diff),
+      ),
+    );
+  }
+
+  Widget _buildDiffModeTab(String label, _DiffDisplayMode mode) {
+    final isSelected = _diffDisplayMode == mode;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => setState(() => _diffDisplayMode = mode),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF6366F1)
+                  : const Color(0xFF30363D),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  dynamic _parseValue(String? valueStr) {
+    if (valueStr == null || valueStr.isEmpty || valueStr == 'null') {
+      return null;
+    }
+
+    // Try parsing as JSON
+    try {
+      final decoded = const JsonDecoder().convert(valueStr);
+      return decoded;
+    } catch (e) {
+      // If parsing fails, return as string
+      return valueStr;
+    }
   }
 
   Widget _buildValueBox(
