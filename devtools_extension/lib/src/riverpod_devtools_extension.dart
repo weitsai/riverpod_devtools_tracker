@@ -7,8 +7,10 @@ import 'package:vm_service/vm_service.dart' hide Stack;
 import '../l10n/app_localizations.dart';
 import 'locale_manager.dart';
 import 'models/provider_state_info.dart';
+import 'models/provider_network.dart';
 import 'widgets/provider_list_tile.dart';
 import 'widgets/state_detail_panel.dart';
+import 'widgets/provider_graph_view.dart';
 import 'theme/extension_theme.dart';
 
 class RiverpodDevToolsExtension extends StatefulWidget {
@@ -57,6 +59,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   // Filter overlay
   final LayerLink _filterLayerLink = LayerLink();
   OverlayEntry? _filterOverlay;
+
+  // Provider network for dependency graph
+  final ProviderNetwork _providerNetwork = ProviderNetwork();
+
+  // Current tab index (0: State Inspector, 1: Graph)
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
@@ -142,6 +150,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
         if (_providerStates.length > 500) {
           _providerStates.removeLast();
         }
+
+        // Update provider network for dependency graph
+        _providerNetwork.recordProviderUpdate(
+          stateInfo.providerName,
+          stateInfo.providerType,
+        );
 
         // Invalidate cache since data changed
         _invalidateFilterCache();
@@ -324,6 +338,36 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                ),
+              ),
+              const Spacer(),
+              // Tab buttons
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1117),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF30363D)),
+                ),
+                child: Row(
+                  children: [
+                    _buildTabButton(
+                      label: 'State',
+                      icon: Icons.view_list,
+                      isSelected: _currentTabIndex == 0,
+                      onTap: () => setState(() => _currentTabIndex = 0),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: const Color(0xFF30363D),
+                    ),
+                    _buildTabButton(
+                      label: 'Graph',
+                      icon: Icons.hub,
+                      isSelected: _currentTabIndex == 1,
+                      onTap: () => setState(() => _currentTabIndex = 1),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
@@ -574,6 +618,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   Widget _buildContent(AppLocalizations l10n) {
+    // Show graph view when Graph tab is selected
+    if (_currentTabIndex == 1) {
+      return ProviderGraphView(network: _providerNetwork);
+    }
+
+    // Show state inspector when State tab is selected
     if (_providerStates.isEmpty) {
       return Center(
         child: Column(
@@ -1072,5 +1122,46 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   void _hideSearchSuggestionsOverlay() {
     _searchOverlay?.remove();
     _searchOverlay = null;
+  }
+
+  /// Build tab button
+  Widget _buildTabButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

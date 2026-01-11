@@ -31,6 +31,7 @@ A powerful Flutter package that automatically tracks Riverpod state changes with
 - 📍 **Code Location Detection** - Shows exactly where state changes originated
 - 📜 **Call Chain Visualization** - View the complete call stack
 - 🎨 **Beautiful DevTools Extension** - GitHub-style dark theme UI
+- 🔄 **Visual Diff Highlighting** - GitHub-style diff view for state changes
 - ⚡ **Zero Configuration** - Just add the observer and you're done
 - 🔧 **Highly Configurable** - Customize what to track and how
 
@@ -255,14 +256,47 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 
 ## DevTools Extension Features
 
-The extension provides a comprehensive debugging interface:
+The extension provides a comprehensive debugging interface with two main views:
 
+### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
 - **Location Info** - Shows the exact file and line number where each change originated
-- **Value Comparison** - Before/after values displayed side by side for easy debugging
+- **Value Comparison** - Before/after values displayed in three view modes:
+  - **Tree View** - Hierarchical JSON tree view with syntax highlighting
+  - **Diff View** - GitHub-style diff highlighting showing exactly what changed
+  - **Text View** - Plain text view with expand/collapse for long values
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
+
+#### Visual Diff Highlighting
+
+The Diff View provides GitHub-style visual diff for state changes:
+
+**Features:**
+- **Color-Coded Changes** - Green for additions, red for removals, yellow for modifications
+- **Inline Diff** - Shows changes line-by-line with +/- indicators
+- **Tree Diff** - Expandable tree view showing nested changes
+- **Smart Comparison** - Deep object and array comparison
+- **Copy Support** - Double-tap to copy values or paths
+
+**How to Use:**
+1. Click any state change in the Provider List
+2. In the State Details panel, click the view mode toggle button
+3. Select "Diff View" to see highlighted changes
+4. For complex objects, switch between Inline and Tree modes
+
+### Graph View Tab
+- **Provider Dependency Graph** - Interactive visualization of provider relationships
+- **Temporal Dependency Detection** - Automatically infers dependencies based on update timing
+- **Interactive Nodes** - Click on providers to see their connections
+- **Connection Strength** - Visual indication of how frequently providers update together
+- **Color-Coded Nodes** - Different colors for different provider types
+- **Zoom & Pan** - Full interactive viewer for exploring complex graphs
+- **Network Statistics** - Real-time stats showing total providers and connections
+
+### Common Features
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
+- **Tab Navigation** - Seamlessly switch between State Inspector and Graph views
 
 ### Provider State Filtering
 
@@ -274,10 +308,32 @@ You can also focus on a specific Provider for in-depth analysis:
 
 ![Filter Specific Provider](doc/images/filter-specific-provider.png)
 
+### Using the Graph View
+
+The Graph View helps you understand provider relationships in your application:
+
+1. **Switch to Graph Tab**: Click the "Graph" tab in the toolbar
+2. **Interact with Your App**: As you use your app, the graph will populate with providers
+3. **Explore Relationships**:
+   - Providers that update close together in time (within 100ms) are shown as connected
+   - Click on a node to highlight its connections
+   - Stronger connections (more frequent co-updates) have thicker lines
+4. **Understand the Colors**:
+   - 🟢 Green: StateProvider
+   - 🔵 Blue: FutureProvider
+   - 🟣 Purple: StreamProvider
+   - 🔴 Red: NotifierProvider
+   - ⚪ Gray: Other provider types
+5. **Reset View**: Use the zoom reset button to return to the default view
+6. **Clear Network**: Click the clear button to start fresh
+
+**Note**: The graph shows *inferred* dependencies based on temporal proximity of updates, not the actual Riverpod dependency graph (which is not accessible through the public API).
+
 ### Tips for Using the Extension
 
 - **Finding State Bugs**: Look at the call chain to understand why a state changed unexpectedly
 - **Performance Debugging**: Check if providers are updating too frequently
+- **Understanding Architecture**: Use the Graph View to see how providers interact
 - **Code Navigation**: Click on file paths in the call chain to jump to the code (if your IDE supports it)
 - **Filtering**: Use the `packagePrefixes` config to focus only on your app's code and filter out framework noise
 
