@@ -11,6 +11,7 @@ import 'package:riverpod/src/internals.dart' as riverpod_internal;
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
 import 'performance_metrics.dart';
+import 'event_persistence.dart';
 
 /// Riverpod DevTools Observer
 ///
@@ -41,11 +42,14 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Stack trace parser
   late final StackTraceParser _parser;
 
-  /// Periodic cleanup timer
+/// Periodic cleanup timer
   Timer? _cleanupTimer;
 
   /// Finalizer to ensure cleanup timer is cancelled when observer is garbage collected
   static final _finalizer = Finalizer<Timer>((timer) => timer.cancel());
+
+  /// Event persistence handler
+  late final EventPersistence? _persistence;
 
   /// Event counter
   int _eventCounter = 0;
@@ -78,6 +82,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
+    _persistence =
+        this.config.enablePersistence ? EventPersistence() : null;
 
     // Start periodic cleanup timer if enabled
     if (this.config.enablePeriodicCleanup) {
@@ -568,6 +574,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
       // Send to DevTools using postEvent
       developer.postEvent('riverpod_state_change', eventData);
+
+      // Save to persistent storage if enabled
+      _persistence?.saveEvent(eventData);
 
       // Console output
       if (config.enableConsoleOutput) {

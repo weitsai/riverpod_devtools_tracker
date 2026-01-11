@@ -237,6 +237,40 @@ class TrackerConfig {
   /// Recommended: false for production, true for development/debugging
   final bool collectPerformanceMetrics;
 
+  /// Whether to enable persistent storage of event history
+  ///
+  /// When enabled, provider events are saved to local storage and can be
+  /// restored when DevTools reconnects. This allows debugging across sessions.
+  ///
+  /// Events are stored as JSON Lines in the application documents directory.
+  /// The storage file is automatically managed (max 10 MB).
+  ///
+  /// Note: Requires path_provider package to be added to dependencies.
+  /// Default: false (disabled for backwards compatibility)
+  final bool enablePersistence;
+
+  /// Maximum number of events to persist
+  ///
+  /// Limits the number of events loaded from storage to prevent memory issues.
+  /// When loading events, only the most recent [maxPersistedEvents] will be
+  /// restored to DevTools.
+  ///
+  /// Default: 1000 events
+  final int maxPersistedEvents;
+
+  /// Whether to clear persisted events when the app starts
+  ///
+  /// When true, all previously stored events will be cleared when the
+  /// observer is initialized. This ensures you only see events from the
+  /// current session.
+  ///
+  /// When false, events from previous sessions will be preserved and
+  /// loaded when DevTools connects.
+  ///
+  /// Only applies when [enablePersistence] is true.
+  /// Default: true (clear on start for cleaner debugging experience)
+  final bool clearOnStart;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -254,6 +288,10 @@ class TrackerConfig {
     this.cleanupInterval = const Duration(seconds: 30),
     this.stackExpirationDuration = const Duration(seconds: 60),
     this.maxStackCacheSize = 100,
+    this.collectPerformanceMetrics = false,
+    this.enablePersistence = false,
+    this.maxPersistedEvents = 1000,
+    this.clearOnStart = true,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -263,9 +301,8 @@ class TrackerConfig {
       'dart:',
     ],
     this.ignoredFilePatterns = const [],
-    this.collectPerformanceMetrics = false,
-  }) : _trackedProviderNames = trackedProviders,
-       _ignoredProviderNames = ignoredProviders;
+  })  : _trackedProviderNames = trackedProviders,
+        _ignoredProviderNames = ignoredProviders;
 
   /// Create a config for a specific package
   ///
@@ -315,20 +352,21 @@ class TrackerConfig {
     Duration cleanupInterval = const Duration(seconds: 30),
     Duration stackExpirationDuration = const Duration(seconds: 60),
     int maxStackCacheSize = 100,
+    bool collectPerformanceMetrics = false,
+    bool enablePersistence = false,
+    int maxPersistedEvents = 1000,
+    bool clearOnStart = true,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
-    bool collectPerformanceMetrics = false,
   }) {
     // Extract provider names from references
-    final trackedNames =
-        trackedProviders != null
-            ? _extractProviderNames(trackedProviders)
-            : const <String>{};
-    final ignoredNames =
-        ignoredProviders != null
-            ? _extractProviderNames(ignoredProviders)
-            : const <String>{};
+    final trackedNames = trackedProviders != null
+        ? _extractProviderNames(trackedProviders)
+        : const <String>{};
+    final ignoredNames = ignoredProviders != null
+        ? _extractProviderNames(ignoredProviders)
+        : const <String>{};
 
     return TrackerConfig(
       enabled: enabled,
@@ -347,6 +385,10 @@ class TrackerConfig {
       cleanupInterval: cleanupInterval,
       stackExpirationDuration: stackExpirationDuration,
       maxStackCacheSize: maxStackCacheSize,
+      collectPerformanceMetrics: collectPerformanceMetrics,
+      enablePersistence: enablePersistence,
+      maxPersistedEvents: maxPersistedEvents,
+      clearOnStart: clearOnStart,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -357,7 +399,6 @@ class TrackerConfig {
         ...additionalIgnored,
       ],
       ignoredFilePatterns: ignoredFilePatterns,
-      collectPerformanceMetrics: collectPerformanceMetrics,
     );
   }
 
@@ -391,9 +432,12 @@ class TrackerConfig {
     Duration? cleanupInterval,
     Duration? stackExpirationDuration,
     int? maxStackCacheSize,
+    bool? collectPerformanceMetrics,
+    bool? enablePersistence,
+    int? maxPersistedEvents,
+    bool? clearOnStart,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
-    bool? collectPerformanceMetrics,
   }) {
     return TrackerConfig(
       enabled: enabled ?? this.enabled,
@@ -416,11 +460,14 @@ class TrackerConfig {
       stackExpirationDuration:
           stackExpirationDuration ?? this.stackExpirationDuration,
       maxStackCacheSize: maxStackCacheSize ?? this.maxStackCacheSize,
+      collectPerformanceMetrics:
+          collectPerformanceMetrics ?? this.collectPerformanceMetrics,
+      enablePersistence: enablePersistence ?? this.enablePersistence,
+      maxPersistedEvents: maxPersistedEvents ?? this.maxPersistedEvents,
+      clearOnStart: clearOnStart ?? this.clearOnStart,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
-      collectPerformanceMetrics:
-          collectPerformanceMetrics ?? this.collectPerformanceMetrics,
     );
   }
 }
