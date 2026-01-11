@@ -377,7 +377,11 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 
 ## DevTools Extension Features
 
+<<<<<<< HEAD
 The extension provides a comprehensive debugging interface with two main tabs:
+=======
+The extension provides a comprehensive debugging interface with two main views:
+>>>>>>> 0c9fd67 (feat: add provider dependency graph visualization (#8))
 
 ### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
@@ -386,6 +390,7 @@ The extension provides a comprehensive debugging interface with two main tabs:
 - **Value Comparison** - Before/after values displayed side by side for easy debugging
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
+<<<<<<< HEAD
 - **Event Export** - Export events to JSON or CSV format for offline analysis and sharing
 
 ### Performance Tab
@@ -401,6 +406,21 @@ The extension provides a comprehensive debugging interface with two main tabs:
 ### Common Features
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
 - **Tab Navigation** - Easily switch between state inspection and performance analysis
+=======
+
+### Graph View Tab
+- **Provider Dependency Graph** - Interactive visualization of provider relationships
+- **Temporal Dependency Detection** - Automatically infers dependencies based on update timing
+- **Interactive Nodes** - Click on providers to see their connections
+- **Connection Strength** - Visual indication of how frequently providers update together
+- **Color-Coded Nodes** - Different colors for different provider types
+- **Zoom & Pan** - Full interactive viewer for exploring complex graphs
+- **Network Statistics** - Real-time stats showing total providers and connections
+
+### Common Features
+- **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
+- **Tab Navigation** - Seamlessly switch between State Inspector and Graph views
+>>>>>>> 0c9fd67 (feat: add provider dependency graph visualization (#8))
 
 ### Provider State Filtering
 
@@ -412,6 +432,7 @@ You can also focus on a specific Provider for in-depth analysis:
 
 ![Filter Specific Provider](doc/images/filter-specific-provider.png)
 
+<<<<<<< HEAD
 ### Timeline View
 
 The extension includes a powerful timeline visualization to help you understand when and how your providers change over time.
@@ -456,11 +477,34 @@ The extension includes a powerful timeline visualization to help you understand 
 - Different provider lanes make it easy to track individual provider behavior
 - Combine with filters to focus on specific providers or change types
 - The timeline shows the top 10 most active providers when many providers exist
+=======
+### Using the Graph View
+
+The Graph View helps you understand provider relationships in your application:
+
+1. **Switch to Graph Tab**: Click the "Graph" tab in the toolbar
+2. **Interact with Your App**: As you use your app, the graph will populate with providers
+3. **Explore Relationships**:
+   - Providers that update close together in time (within 100ms) are shown as connected
+   - Click on a node to highlight its connections
+   - Stronger connections (more frequent co-updates) have thicker lines
+4. **Understand the Colors**:
+   - 🟢 Green: StateProvider
+   - 🔵 Blue: FutureProvider
+   - 🟣 Purple: StreamProvider
+   - 🔴 Red: NotifierProvider
+   - ⚪ Gray: Other provider types
+5. **Reset View**: Use the zoom reset button to return to the default view
+6. **Clear Network**: Click the clear button to start fresh
+
+**Note**: The graph shows *inferred* dependencies based on temporal proximity of updates, not the actual Riverpod dependency graph (which is not accessible through the public API).
+>>>>>>> 0c9fd67 (feat: add provider dependency graph visualization (#8))
 
 ### Tips for Using the Extension
 
 - **Finding State Bugs**: Look at the call chain to understand why a state changed unexpectedly
 - **Performance Debugging**: Check if providers are updating too frequently
+- **Understanding Architecture**: Use the Graph View to see how providers interact
 - **Code Navigation**: Click on file paths in the call chain to jump to the code (if your IDE supports it)
 - **Filtering**: Use the `packagePrefixes` config to focus only on your app's code and filter out framework noise
 

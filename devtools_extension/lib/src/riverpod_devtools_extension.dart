@@ -9,10 +9,12 @@ import 'package:vm_service/vm_service.dart' hide Stack;
 import '../l10n/app_localizations.dart';
 import 'locale_manager.dart';
 import 'models/provider_state_info.dart';
+import 'models/provider_network.dart';
 import 'widgets/provider_list_tile.dart';
 import 'widgets/state_detail_panel.dart';
 import 'widgets/timeline_view.dart';
 import 'widgets/performance_panel.dart';
+import 'widgets/provider_graph_view.dart';
 import 'theme/extension_theme.dart';
 
 /// View mode for the extension
@@ -72,6 +74,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   Map<String, dynamic>? _performanceStats;
 
   // Current tab index (0: State Inspector, 1: Performance)
+  // Provider network for dependency graph
+  final ProviderNetwork _providerNetwork = ProviderNetwork();
+
+  // Current tab index (0: State Inspector, 1: Graph)
   int _currentTabIndex = 0;
 
   @override
@@ -165,6 +171,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             data['performanceStats'] as Map<dynamic, dynamic>,
           );
         }
+        // Update provider network for dependency graph
+        _providerNetwork.recordProviderUpdate(
+          stateInfo.providerName,
+          stateInfo.providerType,
+        );
 
         // Invalidate cache since data changed
         _invalidateFilterCache();
@@ -376,6 +387,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                       isSelected: _currentTabIndex == 1,
                       onTap: () => setState(() => _currentTabIndex = 1),
                     ),
+                    _buildTabButton(
+                      label: 'Graph',
+                      icon: Icons.hub,
+                      isSelected: _currentTabIndex == 2,
+                      onTap: () => setState(() => _currentTabIndex = 2),
+                    ),
                   ],
                 ),
               ),
@@ -427,10 +444,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(
-                  Icons.download,
-                  color: Color(0xFF8B949E),
-                ),
+                icon: const Icon(Icons.download, color: Color(0xFF8B949E)),
                 onPressed: _providerStates.isEmpty ? null : _showExportDialog,
                 tooltip: 'Export Events',
               ),
@@ -678,6 +692,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     }
 
     // Show state inspector when State Inspector tab is selected
+    // Show graph view when Graph tab is selected
+    if (_currentTabIndex == 2) {
+      return ProviderGraphView(network: _providerNetwork);
+    }
+
+    // Show state inspector when State tab is selected
     if (_providerStates.isEmpty) {
       return Center(
         child: Column(
@@ -747,7 +767,8 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           child: TimelineView(
             events: _filteredProviders,
             selectedEvent: _selectedProvider,
-            onEventSelected: (event) => setState(() => _selectedProvider = event),
+            onEventSelected:
+                (event) => setState(() => _selectedProvider = event),
           ),
         ),
         if (_selectedProvider != null) ...[
@@ -1212,49 +1233,57 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   void _showExportDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text(
-          'Export Events',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.code, color: Color(0xFF6366F1)),
-              title: const Text(
-                'JSON Format',
-                style: TextStyle(color: Colors.white),
-              ),
-              subtitle: Text(
-                'Complete event data with metadata',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _exportAsJson();
-              },
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF161B22),
+            title: const Text(
+              'Export Events',
+              style: TextStyle(color: Colors.white),
             ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.table_chart, color: Color(0xFF6366F1)),
-              title: const Text(
-                'CSV Format',
-                style: TextStyle(color: Colors.white),
-              ),
-              subtitle: Text(
-                'Timeline format for spreadsheet analysis',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _exportAsCsv();
-              },
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.code, color: Color(0xFF6366F1)),
+                  title: const Text(
+                    'JSON Format',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    'Complete event data with metadata',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportAsJson();
+                  },
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(
+                    Icons.table_chart,
+                    color: Color(0xFF6366F1),
+                  ),
+                  title: const Text(
+                    'CSV Format',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    'Timeline format for spreadsheet analysis',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportAsCsv();
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -1278,13 +1307,15 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
     for (final state in _providerStates) {
       final formattedValue = _formatValueForCsv(state.currentValue);
-      buffer.writeln([
-        state.timestamp.toIso8601String(),
-        state.changeType,
-        state.providerName,
-        formattedValue.replaceAll(',', ';'), // Escape commas
-        state.location ?? 'N/A',
-      ].join(','));
+      buffer.writeln(
+        [
+          state.timestamp.toIso8601String(),
+          state.changeType,
+          state.providerName,
+          formattedValue.replaceAll(',', ';'), // Escape commas
+          state.location ?? 'N/A',
+        ].join(','),
+      );
     }
 
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
@@ -1306,9 +1337,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
     final bytes = utf8.encode(content);
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', filename)
-      ..click();
+    final anchor =
+        html.AnchorElement(href: url)
+          ..setAttribute('download', filename)
+          ..click();
     html.Url.revokeObjectUrl(url);
   }
 
@@ -1336,13 +1368,19 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             Icon(
               icon,
               size: 18,
-              color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+              color:
+                  isSelected
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF8B949E),
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+                color:
+                    isSelected
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFF8B949E),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 14,
               ),
