@@ -192,6 +192,41 @@ class TrackerConfig {
   /// Default: 500 entries
   final int maxStackTraceCacheSize;
 
+  /// Whether to enable periodic memory cleanup
+  ///
+  /// When enabled, a timer periodically removes expired stack traces
+  /// from the cache to prevent memory buildup. This helps maintain
+  /// stable memory usage during long debugging sessions.
+  ///
+  /// Default: true (enabled for automatic memory management)
+  final bool enablePeriodicCleanup;
+
+  /// Interval between automatic cleanup operations
+  ///
+  /// Determines how often the cleanup timer runs to remove expired
+  /// stack traces from memory. More frequent cleanup uses slightly
+  /// more CPU but keeps memory footprint smaller.
+  ///
+  /// Default: Duration(seconds: 30)
+  final Duration cleanupInterval;
+
+  /// How long stack traces are kept before being considered expired
+  ///
+  /// Stack traces older than this duration will be removed during
+  /// cleanup. Longer durations keep more history but use more memory.
+  ///
+  /// Default: Duration(seconds: 60)
+  final Duration stackExpirationDuration;
+
+  /// Maximum number of stack traces to keep in cache
+  ///
+  /// When this limit is exceeded, the oldest stack traces are removed
+  /// even if they haven't expired yet. This provides a hard limit on
+  /// memory usage.
+  ///
+  /// Default: 100 stack traces
+  final int maxStackCacheSize;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -205,6 +240,10 @@ class TrackerConfig {
     this.providerFilter,
     this.enableStackTraceCache = true,
     this.maxStackTraceCacheSize = 500,
+    this.enablePeriodicCleanup = true,
+    this.cleanupInterval = const Duration(seconds: 30),
+    this.stackExpirationDuration = const Duration(seconds: 60),
+    this.maxStackCacheSize = 100,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -261,6 +300,10 @@ class TrackerConfig {
     bool Function(String providerName, String providerType)? providerFilter,
     bool enableStackTraceCache = true,
     int maxStackTraceCacheSize = 500,
+    bool enablePeriodicCleanup = true,
+    Duration cleanupInterval = const Duration(seconds: 30),
+    Duration stackExpirationDuration = const Duration(seconds: 60),
+    int maxStackCacheSize = 100,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
@@ -288,6 +331,10 @@ class TrackerConfig {
       providerFilter: providerFilter,
       enableStackTraceCache: enableStackTraceCache,
       maxStackTraceCacheSize: maxStackTraceCacheSize,
+      enablePeriodicCleanup: enablePeriodicCleanup,
+      cleanupInterval: cleanupInterval,
+      stackExpirationDuration: stackExpirationDuration,
+      maxStackCacheSize: maxStackCacheSize,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -327,6 +374,10 @@ class TrackerConfig {
     bool Function(String providerName, String providerType)? providerFilter,
     bool? enableStackTraceCache,
     int? maxStackTraceCacheSize,
+    bool? enablePeriodicCleanup,
+    Duration? cleanupInterval,
+    Duration? stackExpirationDuration,
+    int? maxStackCacheSize,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
   }) {
@@ -345,6 +396,12 @@ class TrackerConfig {
           enableStackTraceCache ?? this.enableStackTraceCache,
       maxStackTraceCacheSize:
           maxStackTraceCacheSize ?? this.maxStackTraceCacheSize,
+      enablePeriodicCleanup:
+          enablePeriodicCleanup ?? this.enablePeriodicCleanup,
+      cleanupInterval: cleanupInterval ?? this.cleanupInterval,
+      stackExpirationDuration:
+          stackExpirationDuration ?? this.stackExpirationDuration,
+      maxStackCacheSize: maxStackCacheSize ?? this.maxStackCacheSize,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,

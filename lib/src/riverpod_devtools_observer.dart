@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -36,6 +37,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Stack trace parser
   late final StackTraceParser _parser;
 
+  /// Periodic cleanup timer
+  Timer? _cleanupTimer;
+
   /// Event counter
   int _eventCounter = 0;
 
@@ -45,12 +49,6 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ///
   /// 注意：為了防止記憶體洩漏，這個 Map 會定期清理舊的記錄
   final Map<String, _ProviderStackTrace> _providerStacks = {};
-
-  /// 堆疊緩存的最大大小（防止記憶體洩漏）
-  static const int _maxStackCacheSize = 100;
-
-  /// 堆疊記錄的過期時間（毫秒）
-  static const int _stackExpirationMs = 60000; // 60 seconds
 
   /// Creates a new Riverpod DevTools Observer
   ///
@@ -67,6 +65,67 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
+
+    // Start periodic cleanup timer if enabled
+    if (this.config.enablePeriodicCleanup) {
+      _startCleanupTimer();
+    }
+  }
+
+  /// Start the periodic cleanup timer
+  void _startCleanupTimer() {
+    _cleanupTimer = Timer.periodic(
+      config.cleanupInterval,
+      (_) => _cleanupExpiredStacks(),
+    );
+  }
+
+  /// Clean up expired stack traces from memory
+  ///
+  /// This method removes stack traces that have expired based on
+  /// [config.stackExpirationDuration]. If the cache still exceeds
+  /// [config.maxStackCacheSize] after removing expired entries,
+  /// the oldest remaining entries are removed.
+  void _cleanupExpiredStacks() {
+    if (_providerStacks.isEmpty) return;
+
+    final now = DateTime.now();
+    final threshold = now.subtract(config.stackExpirationDuration);
+
+    // Remove expired entries
+    _providerStacks.removeWhere((key, value) {
+      return value.timestamp.isBefore(threshold);
+    });
+
+    // If still over limit, remove oldest entries
+    if (_providerStacks.length > config.maxStackCacheSize) {
+      final entriesToRemove =
+          _providerStacks.length - config.maxStackCacheSize;
+      final sortedEntries = _providerStacks.entries.toList()
+        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+
+      for (var i = 0; i < entriesToRemove; i++) {
+        _providerStacks.remove(sortedEntries[i].key);
+      }
+    }
+  }
+
+  /// Dispose resources used by the observer
+  ///
+  /// Call this method when the observer is no longer needed to prevent
+  /// memory leaks. This will cancel the cleanup timer and clear all
+  /// cached data.
+  ///
+  /// Example:
+  /// ```dart
+  /// final observer = RiverpodDevToolsObserver(...);
+  /// // ... use observer ...
+  /// observer.dispose();
+  /// ```
+  void dispose() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    _providerStacks.clear();
   }
 
   @override
@@ -314,31 +373,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         timestamp: DateTime.now(),
       );
 
-      // 清理過期的堆疊記錄以防止記憶體洩漏
-      _cleanupExpiredStacks();
-    }
-  }
-
-  /// 清理過期的堆疊記錄
-  void _cleanupExpiredStacks() {
-    // 如果緩存大小超過限制，清理所有過期記錄
-    if (_providerStacks.length > _maxStackCacheSize) {
-      final now = DateTime.now();
-      _providerStacks.removeWhere((key, value) {
-        final age = now.difference(value.timestamp).inMilliseconds;
-        return age > _stackExpirationMs;
-      });
-
-      // 如果清理後還是超過限制，移除最舊的記錄
-      if (_providerStacks.length > _maxStackCacheSize) {
-        final entries =
-            _providerStacks.entries.toList()
-              ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
-
-        final toRemove = _providerStacks.length - _maxStackCacheSize;
-        for (var i = 0; i < toRemove; i++) {
-          _providerStacks.remove(entries[i].key);
-        }
+      // Manual cleanup is no longer needed here - periodic timer handles it
+      // Only trigger manual cleanup if periodic cleanup is disabled
+      if (!config.enablePeriodicCleanup) {
+        _cleanupExpiredStacks();
       }
     }
   }
