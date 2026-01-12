@@ -445,6 +445,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Serialize value for transmission
   /// Note: We send full values to DevTools (no truncation here).
   /// Truncation is only done for console output in _formatValue.
+  ///
+  /// Optimized to avoid double encoding-decoding cycles for better performance.
   dynamic _serializeValue(Object? value) {
     if (value == null) return null;
 
@@ -454,15 +456,16 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         return value;
       }
 
-      // Enum types
+      // Enum types - return structured format for better DevTools display
       if (value is Enum) {
-        return value.name;
+        return {'type': 'Enum', 'name': value.name};
       }
 
-      // Try to convert to JSON (for simple Map/List with primitives)
+      // Handle Map/List - Validate serializability without double encoding
       if (value is Map || value is List) {
         try {
-          return json.decode(json.encode(value));
+          json.encode(value); // Validate serializability
+          return value;       // Return original value (no decode needed)
         } catch (_) {
           // If JSON serialization fails, convert to string representation
           return {
@@ -477,9 +480,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         final dynamic dynamicValue = value;
         if (dynamicValue.toJson != null) {
           final jsonResult = dynamicValue.toJson();
-          // Try to make it JSON-safe
+          // Validate serializability without double encoding
           try {
-            return json.decode(json.encode(jsonResult));
+            json.encode(jsonResult); // Validate serializability
+            return jsonResult;      // Return serialized result (no decode needed)
           } catch (_) {
             return jsonResult;
           }
@@ -535,6 +539,12 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       // If serialization fails, fall back to toString comparison
       return value1.toString() == value2.toString();
     }
+  }
+
+  /// Exposes the serialization logic for testing purposes
+  /// @visibleForTesting
+  dynamic serializeValueForTest(Object? value) {
+    return _serializeValue(value);
   }
 }
 
