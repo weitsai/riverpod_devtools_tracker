@@ -27,19 +27,20 @@ void main() {
     });
 
     test('tracks only whitelisted providers when trackedProviders is set', () {
-      final observer = _TestObserverWithConfig(
-        TrackerConfig(
-          enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'provider1', 'provider3'},
-        ),
-      );
-      final container = ProviderContainer(observers: [observer]);
-
+      // Define providers first so we can reference them
       final provider1 = Provider<int>((ref) => 1, name: 'provider1');
       final provider2 = Provider<int>((ref) => 2, name: 'provider2');
       final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
       final provider4 = Provider<bool>((ref) => true, name: 'provider4');
+
+      final observer = _TestObserverWithConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
+          enableConsoleOutput: false,
+          trackedProviders: [provider1, provider3],
+        ),
+      );
+      final container = ProviderContainer(observers: [observer]);
 
       // Trigger provider events
       container.read(provider1);
@@ -56,19 +57,20 @@ void main() {
     });
 
     test('ignores blacklisted providers when ignoredProviders is set', () {
-      final observer = _TestObserverWithConfig(
-        TrackerConfig(
-          enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          ignoredProviders: {'provider2', 'provider4'},
-        ),
-      );
-      final container = ProviderContainer(observers: [observer]);
-
+      // Define providers first so we can reference them
       final provider1 = Provider<int>((ref) => 1, name: 'provider1');
       final provider2 = Provider<int>((ref) => 2, name: 'provider2');
       final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
       final provider4 = Provider<bool>((ref) => true, name: 'provider4');
+
+      final observer = _TestObserverWithConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
+          enableConsoleOutput: false,
+          ignoredProviders: [provider2, provider4],
+        ),
+      );
+      final container = ProviderContainer(observers: [observer]);
 
       // Trigger provider events
       container.read(provider1);
@@ -85,20 +87,21 @@ void main() {
     });
 
     test('whitelist takes precedence over blacklist', () {
-      final observer = _TestObserverWithConfig(
-        TrackerConfig(
-          enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'provider1', 'provider2'}, // Whitelist
-          ignoredProviders: {'provider2', 'provider3'}, // Blacklist
-        ),
-      );
-      final container = ProviderContainer(observers: [observer]);
-
+      // Define providers first so we can reference them
       final provider1 = Provider<int>((ref) => 1, name: 'provider1');
       final provider2 = Provider<int>((ref) => 2, name: 'provider2');
       final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
       final provider4 = Provider<bool>((ref) => true, name: 'provider4');
+
+      final observer = _TestObserverWithConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
+          enableConsoleOutput: false,
+          trackedProviders: [provider1, provider2], // Whitelist
+          ignoredProviders: [provider2, provider3], // Blacklist
+        ),
+      );
+      final container = ProviderContainer(observers: [observer]);
 
       // Trigger provider events
       container.read(provider1);
@@ -145,21 +148,22 @@ void main() {
     });
 
     test('providerFilter is applied after whitelist/blacklist', () {
+      // Define providers first so we can reference them
+      final provider1 = Provider<int>((ref) => 1, name: 'provider1');
+      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
+      final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
+      final provider4 = Provider<bool>((ref) => true, name: 'provider4');
+
       final observer = _TestObserverWithConfig(
-        TrackerConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
           enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'provider2', 'provider3'}, // Whitelist
+          trackedProviders: [provider2, provider3], // Whitelist
           // Filter out provider3 by name
           providerFilter: (name, type) => name != 'provider3',
         ),
       );
       final container = ProviderContainer(observers: [observer]);
-
-      final provider1 = Provider<int>((ref) => 1, name: 'provider1');
-      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
-      final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
-      final provider4 = Provider<bool>((ref) => true, name: 'provider4');
 
       // Trigger provider events
       container.read(provider1); // Not in whitelist - ignored
@@ -175,15 +179,6 @@ void main() {
     });
 
     test('filters work with didUpdateProvider', () async {
-      final observer = _TestObserverWithConfig(
-        TrackerConfig(
-          enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'testProvider'}, // Only track testProvider
-        ),
-      );
-      final container = ProviderContainer(observers: [observer]);
-
       var value1 = 0;
       var value2 = 0;
       final provider1 = FutureProvider<int>((ref) async {
@@ -194,6 +189,15 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 5));
         return value2;
       }, name: 'otherProvider');
+
+      final observer = _TestObserverWithConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
+          enableConsoleOutput: false,
+          trackedProviders: [provider1], // Only track testProvider
+        ),
+      );
+      final container = ProviderContainer(observers: [observer]);
 
       // Read providers to trigger add events
       container.read(provider1);
@@ -226,17 +230,17 @@ void main() {
     });
 
     test('filters work with didDisposeProvider', () {
+      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
+      final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
+
       final observer = _TestObserverWithConfig(
-        TrackerConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
           enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'provider2'}, // Only track provider2
+          trackedProviders: [provider2], // Only track provider2
         ),
       );
       final container = ProviderContainer(observers: [observer]);
-
-      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
-      final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
 
       // Read providers
       container.read(provider2);
@@ -262,10 +266,10 @@ void main() {
       }, name: 'normalProvider');
 
       final observer = _TestObserverWithConfig(
-        TrackerConfig(
+        TrackerConfig.forPackage(
+          'riverpod_devtools_tracker',
           enableConsoleOutput: false,
-          packagePrefixes: ['package:riverpod_devtools_tracker/'],
-          trackedProviders: {'failingProvider'}, // Only track failingProvider
+          trackedProviders: [failingProvider], // Only track failingProvider
         ),
       );
       final container = ProviderContainer(observers: [observer]);
@@ -285,11 +289,15 @@ void main() {
       container.dispose();
     });
 
-    test('TrackerConfig.forPackage supports new filter parameters', () {
+    test('TrackerConfig.forPackage supports provider reference parameters', () {
+      final provider1 = Provider<int>((ref) => 1, name: 'provider1');
+      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
+      final provider3 = Provider<String>((ref) => 'test', name: 'provider3');
+
       final config = TrackerConfig.forPackage(
         'my_app',
-        trackedProviders: {'provider1', 'provider2'},
-        ignoredProviders: {'provider3'},
+        trackedProviders: [provider1, provider2],
+        ignoredProviders: [provider3],
         providerFilter: (name, type) => type.contains('State'),
       );
 
@@ -300,10 +308,14 @@ void main() {
       expect(config.providerFilter!('test', 'Provider'), false);
     });
 
-    test('TrackerConfig.copyWith supports new filter parameters', () {
-      final config = TrackerConfig(
-        trackedProviders: {'provider1'},
-        ignoredProviders: {'provider2'},
+    test('TrackerConfig.copyWith supports filter parameters', () {
+      final provider1 = Provider<int>((ref) => 1, name: 'provider1');
+      final provider2 = Provider<int>((ref) => 2, name: 'provider2');
+
+      final config = TrackerConfig.forPackage(
+        'my_app',
+        trackedProviders: [provider1],
+        ignoredProviders: [provider2],
       );
 
       final newConfig = config.copyWith(

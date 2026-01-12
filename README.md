@@ -238,17 +238,26 @@ RiverpodDevToolsObserver(
 
 ### Selective Provider Tracking
 
-You can filter which providers to track using whitelists, blacklists, or custom filters:
+You can filter which providers to track using whitelists, blacklists, or custom filters.
+
+Pass provider references directly for type-safety and IDE auto-completion:
 
 ```dart
+// Define your providers
+final userProvider = StateProvider<User?>((ref) => null);
+final cartProvider = StateNotifierProvider<CartNotifier, Cart>(...);
+final authProvider = StateProvider<bool>((ref) => false);
+final debugProvider = Provider<String>((ref) => 'debug');
+final tempProvider = Provider<int>((ref) => 0);
+
 RiverpodDevToolsObserver(
   config: TrackerConfig.forPackage(
     'your_app',
     // Whitelist: Only track these providers (takes precedence over blacklist)
-    trackedProviders: {'userProvider', 'cartProvider', 'authProvider'},
+    trackedProviders: [userProvider, cartProvider, authProvider],
 
     // Blacklist: Ignore these providers (only works when whitelist is empty)
-    ignoredProviders: {'debugProvider', 'tempProvider'},
+    ignoredProviders: [debugProvider, tempProvider],
 
     // Custom filter: Advanced filtering based on name and type
     providerFilter: (name, type) {
@@ -426,16 +435,22 @@ RiverpodDevToolsObserver(
 When debugging a specific feature, track only related providers:
 
 ```dart
+// Assume you have defined these providers
+final cartProvider = StateNotifierProvider<CartNotifier, Cart>(...);
+final cartItemsProvider = Provider<List<CartItem>>(...);
+final cartTotalProvider = Provider<double>(...);
+final checkoutProvider = StateNotifierProvider<CheckoutNotifier, CheckoutState>(...);
+
 RiverpodDevToolsObserver(
   config: TrackerConfig.forPackage(
     'my_app',
     // Only track providers related to shopping cart
-    trackedProviders: {
-      'cartProvider',
-      'cartItemsProvider',
-      'cartTotalProvider',
-      'checkoutProvider',
-    },
+    trackedProviders: [
+      cartProvider,
+      cartItemsProvider,
+      cartTotalProvider,
+      checkoutProvider,
+    ],
   ),
 )
 ```
@@ -445,15 +460,20 @@ RiverpodDevToolsObserver(
 Filter out high-frequency or debug-only providers:
 
 ```dart
+// Assume you have defined these providers
+final mousePositionProvider = StateProvider<Offset>(...);
+final timerProvider = StreamProvider<DateTime>(...);
+final debugLogProvider = Provider<String>(...);
+
 RiverpodDevToolsObserver(
   config: TrackerConfig.forPackage(
     'my_app',
     // Ignore providers that update frequently and create noise
-    ignoredProviders: {
-      'mousePositionProvider',  // Updates on every mouse move
-      'timerProvider',           // Updates every second
-      'debugLogProvider',        // Debug-only provider
-    },
+    ignoredProviders: [
+      mousePositionProvider,  // Updates on every mouse move
+      timerProvider,           // Updates every second
+      debugLogProvider,        // Debug-only provider
+    ],
   ),
 )
 ```
@@ -481,20 +501,27 @@ RiverpodDevToolsObserver(
 Use multiple filtering strategies together:
 
 ```dart
+// Assume you have defined these providers
+final authProvider = StateProvider<AuthState>(...);
+final userProvider = StateProvider<User?>(...);
+final sessionProvider = StateProvider<Session?>(...);
+final permissionsProvider = Provider<Permissions>(...);
+final tokenRefreshProvider = StreamProvider<String>(...);
+
 RiverpodDevToolsObserver(
   config: TrackerConfig.forPackage(
     'my_app',
     // Track only authentication and user-related providers
-    trackedProviders: {
-      'authProvider',
-      'userProvider',
-      'sessionProvider',
-      'permissionsProvider',
-    },
+    trackedProviders: [
+      authProvider,
+      userProvider,
+      sessionProvider,
+      permissionsProvider,
+    ],
     // But exclude the token refresh provider (too noisy)
-    ignoredProviders: {
-      'tokenRefreshProvider',
-    },
+    ignoredProviders: [
+      tokenRefreshProvider,
+    ],
     // And apply custom filter for additional control
     providerFilter: (name, type) {
       // Skip any provider that ends with 'Cache'
