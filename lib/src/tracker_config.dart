@@ -18,6 +18,17 @@
 ///     maxCallChainDepth: 15,
 ///   ),
 /// )
+///
+/// // Use provider references for type-safe filtering
+/// RiverpodDevToolsObserver(
+///   config: TrackerConfig.forPackage(
+///     'my_app',
+///     // Blacklist: ignore these providers
+///     ignoredProviders: [debugProvider, tempProvider],
+///     // Or use whitelist: only track these providers
+///     // trackedProviders: [counterProvider, userProvider],
+///   ),
+/// )
 /// ```
 class TrackerConfig {
   /// Whether tracking is enabled
@@ -81,6 +92,86 @@ class TrackerConfig {
   /// Default: true (filtering enabled)
   final bool skipUnchangedValues;
 
+  /// Whitelist of Provider names to track (if not empty, only these will be tracked)
+  ///
+  /// When this set is not empty, ONLY providers whose names are in this set
+  /// will be tracked. This is useful for focusing on specific providers in
+  /// large applications.
+  ///
+  /// This stores the extracted names from provider references passed to the constructor.
+  /// Use [TrackerConfig.forPackage] with `trackedProviders` parameter to specify
+  /// which providers to track.
+  ///
+  /// Note: If both [trackedProviders] and [ignoredProviders] are set,
+  /// [trackedProviders] takes precedence (whitelist before blacklist).
+  final Set<String> _trackedProviderNames;
+
+  /// Blacklist of Provider names to ignore
+  ///
+  /// Providers whose names are in this set will NOT be tracked.
+  /// This is useful for ignoring noisy or uninteresting providers.
+  ///
+  /// This stores the extracted names from provider references passed to the constructor.
+  /// Use [TrackerConfig.forPackage] with `ignoredProviders` parameter to specify
+  /// which providers to ignore.
+  final Set<String> _ignoredProviderNames;
+
+  /// Custom filter function for providers
+  ///
+  /// If provided, this function will be called for each provider to determine
+  /// whether it should be tracked. The function receives the provider name
+  /// and type, and should return true if the provider should be tracked.
+  ///
+  /// This allows for more complex filtering logic, such as:
+  /// - Filtering by provider type (e.g., only StateProvider)
+  /// - Pattern matching on provider names (e.g., names ending with 'Store')
+  /// - Combining multiple conditions
+  ///
+  /// Example:
+  /// ```dart
+  /// providerFilter: (name, type) {
+  ///   // Only track StateProvider and StateNotifierProvider
+  ///   return type.contains('State');
+  /// }
+  /// ```
+  ///
+  /// Note: This filter is applied AFTER [trackedProviders] and [ignoredProviders].
+  final bool Function(String providerName, String providerType)? providerFilter;
+
+  /// Internal helper to extract provider names from provider references
+  ///
+  /// This method extracts the name property from Riverpod providers using
+  /// dynamic dispatch. Works with any Riverpod provider type (Provider,
+  /// NotifierProvider, FutureProvider, etc.).
+  ///
+  /// Falls back to runtime type name if the name property is not accessible.
+  static Set<String> _extractProviderNames(Iterable<Object> providers) {
+    return providers.map((p) {
+      // Try to access the 'name' property that all Riverpod providers have
+      try {
+        final dynamic provider = p;
+        final String? name = provider.name as String?;
+        if (name != null && name.isNotEmpty) {
+          return name;
+        }
+      } catch (e) {
+        // In debug mode, warn about extraction failures
+        assert(() {
+          print('Warning: Unable to extract name from provider $p: $e');
+          return true;
+        }());
+      }
+      // Fall back to runtimeType without generic parameters
+      return p.runtimeType.toString().replaceAll(RegExp(r'<.*>'), '');
+    }).toSet();
+  }
+
+  /// Getter for tracked provider names (for internal use by observer)
+  Set<String> get trackedProviders => _trackedProviderNames;
+
+  /// Getter for ignored provider names (for internal use by observer)
+  Set<String> get ignoredProviders => _ignoredProviderNames;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -89,6 +180,9 @@ class TrackerConfig {
     this.maxCallChainDepth = 10,
     this.maxValueLength = 200,
     this.skipUnchangedValues = true,
+    Set<String> trackedProviders = const {},
+    Set<String> ignoredProviders = const {},
+    this.providerFilter,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -98,9 +192,26 @@ class TrackerConfig {
       'dart:',
     ],
     this.ignoredFilePatterns = const [],
-  });
+  }) : _trackedProviderNames = trackedProviders,
+       _ignoredProviderNames = ignoredProviders;
 
   /// Create a config for a specific package
+  ///
+  /// Use provider references for type-safe filtering with IDE auto-completion:
+  ///
+  /// ```dart
+  /// TrackerConfig.forPackage(
+  ///   'my_app',
+  ///   // Whitelist: only track these providers
+  ///   trackedProviders: [counterProvider, userProvider],
+  ///
+  ///   // Blacklist: ignore these providers
+  ///   ignoredProviders: [debugProvider, tempProvider],
+  ///
+  ///   // Custom filter for advanced logic
+  ///   providerFilter: (name, type) => type.contains('State'),
+  /// )
+  /// ```
   factory TrackerConfig.forPackage(
     String packageName, {
     bool enabled = true,
@@ -109,10 +220,37 @@ class TrackerConfig {
     int maxCallChainDepth = 10,
     int maxValueLength = 200,
     bool skipUnchangedValues = true,
+
+    /// Provider references to track (whitelist)
+    ///
+    /// Pass actual provider instances for compile-time safety and IDE auto-completion.
+    /// When specified, ONLY these providers will be tracked.
+    ///
+    /// Example: `[counterProvider, userProvider, authProvider]`
+    Iterable<Object>? trackedProviders,
+
+    /// Provider references to ignore (blacklist)
+    ///
+    /// Pass actual provider instances for compile-time safety and IDE auto-completion.
+    /// These providers will NOT be tracked.
+    ///
+    /// Example: `[debugProvider, tempProvider]`
+    Iterable<Object>? ignoredProviders,
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
   }) {
+    // Extract provider names from references
+    final trackedNames =
+        trackedProviders != null
+            ? _extractProviderNames(trackedProviders)
+            : const <String>{};
+    final ignoredNames =
+        ignoredProviders != null
+            ? _extractProviderNames(ignoredProviders)
+            : const <String>{};
+
     return TrackerConfig(
       enabled: enabled,
       packagePrefixes: ['package:$packageName/', ...additionalPackages],
@@ -121,6 +259,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth,
       maxValueLength: maxValueLength,
       skipUnchangedValues: skipUnchangedValues,
+      trackedProviders: trackedNames,
+      ignoredProviders: ignoredNames,
+      providerFilter: providerFilter,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -155,6 +296,9 @@ class TrackerConfig {
     int? maxCallChainDepth,
     int? maxValueLength,
     bool? skipUnchangedValues,
+    Set<String>? trackedProviders,
+    Set<String>? ignoredProviders,
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
   }) {
@@ -166,6 +310,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth ?? this.maxCallChainDepth,
       maxValueLength: maxValueLength ?? this.maxValueLength,
       skipUnchangedValues: skipUnchangedValues ?? this.skipUnchangedValues,
+      trackedProviders: trackedProviders ?? this.trackedProviders,
+      ignoredProviders: ignoredProviders ?? this.ignoredProviders,
+      providerFilter: providerFilter ?? this.providerFilter,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
