@@ -90,7 +90,48 @@ class StackTraceParser {
     r'#(\d+)\s+(.+?)\s+\((.+?):(\d+)(?::(\d+))?\)',
   );
 
+  /// Cache for parsed call chains (LRU cache)
+  /// Maps stack trace hash to parsed call chain
+  final Map<int, List<LocationInfo>> _callChainCache = {};
+
+  /// Cache for trigger locations (LRU cache)
+  /// Maps stack trace hash to trigger location
+  final Map<int, LocationInfo?> _triggerLocationCache = {};
+
+  /// Access order tracking for LRU eviction
+  /// Maps stack trace hash to last access timestamp
+  final Map<int, DateTime> _cacheAccessTimes = {};
+
   StackTraceParser(this.config);
+
+  /// Evicts least recently used cache entries when cache size exceeds limit
+  void _evictLRUIfNeeded() {
+    if (!config.enableStackTraceCache) return;
+
+    final cacheSize = _callChainCache.length;
+    if (cacheSize <= config.maxStackTraceCacheSize) return;
+
+    // Need to evict oldest entries
+    final entriesToRemove = cacheSize - config.maxStackTraceCacheSize;
+
+    // Sort by access time (oldest first)
+    final sortedKeys = _cacheAccessTimes.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+
+    // Remove oldest entries
+    for (var i = 0; i < entriesToRemove && i < sortedKeys.length; i++) {
+      final key = sortedKeys[i].key;
+      _callChainCache.remove(key);
+      _triggerLocationCache.remove(key);
+      _cacheAccessTimes.remove(key);
+    }
+  }
+
+  /// Updates cache access time for LRU tracking
+  void _updateCacheAccess(int key) {
+    if (!config.enableStackTraceCache) return;
+    _cacheAccessTimes[key] = DateTime.now();
+  }
 
   /// Parses a complete call chain from a stack trace
   ///
@@ -101,6 +142,10 @@ class StackTraceParser {
   /// The list is ordered from most recent call to oldest, and is limited
   /// to [TrackerConfig.maxCallChainDepth] entries.
   ///
+  /// When caching is enabled, this method caches parsed results to avoid
+  /// redundant parsing of identical stack traces, significantly improving
+  /// performance for frequently updated providers.
+  ///
   /// Example:
   /// ```dart
   /// final parser = StackTraceParser(config);
@@ -110,6 +155,32 @@ class StackTraceParser {
   /// }
   /// ```
   List<LocationInfo> parseCallChain(StackTrace stackTrace) {
+    // Check cache if enabled
+    if (config.enableStackTraceCache) {
+      final cacheKey = stackTrace.toString().hashCode;
+
+      // Cache hit - return cached result
+      if (_callChainCache.containsKey(cacheKey)) {
+        _updateCacheAccess(cacheKey);
+        return _callChainCache[cacheKey]!;
+      }
+
+      // Cache miss - parse and cache the result
+      final chain = _parseCallChainInternal(stackTrace);
+
+      _callChainCache[cacheKey] = chain;
+      _updateCacheAccess(cacheKey);
+      _evictLRUIfNeeded();
+
+      return chain;
+    }
+
+    // Cache disabled - parse directly
+    return _parseCallChainInternal(stackTrace);
+  }
+
+  /// Internal method that performs the actual parsing
+  List<LocationInfo> _parseCallChainInternal(StackTrace stackTrace) {
     final lines = stackTrace.toString().split('\n');
     final chain = <LocationInfo>[];
 
@@ -153,6 +224,9 @@ class StackTraceParser {
   ///
   /// Returns `null` if no suitable location is found.
   ///
+  /// When caching is enabled, this method caches the result to avoid
+  /// redundant analysis of identical stack traces.
+  ///
   /// Example:
   /// ```dart
   /// final parser = StackTraceParser(config);
@@ -162,6 +236,32 @@ class StackTraceParser {
   /// }
   /// ```
   LocationInfo? findTriggerLocation(StackTrace stackTrace) {
+    // Check cache if enabled
+    if (config.enableStackTraceCache) {
+      final cacheKey = stackTrace.toString().hashCode;
+
+      // Cache hit - return cached result
+      if (_triggerLocationCache.containsKey(cacheKey)) {
+        _updateCacheAccess(cacheKey);
+        return _triggerLocationCache[cacheKey];
+      }
+
+      // Cache miss - find and cache the result
+      final trigger = _findTriggerLocationInternal(stackTrace);
+
+      _triggerLocationCache[cacheKey] = trigger;
+      _updateCacheAccess(cacheKey);
+      _evictLRUIfNeeded();
+
+      return trigger;
+    }
+
+    // Cache disabled - find directly
+    return _findTriggerLocationInternal(stackTrace);
+  }
+
+  /// Internal method that performs the actual trigger location finding
+  LocationInfo? _findTriggerLocationInternal(StackTrace stackTrace) {
     final callChain = parseCallChain(stackTrace);
 
     if (callChain.isEmpty) return null;
