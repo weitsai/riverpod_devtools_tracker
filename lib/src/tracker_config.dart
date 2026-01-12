@@ -81,6 +81,44 @@ class TrackerConfig {
   /// Default: true (filtering enabled)
   final bool skipUnchangedValues;
 
+  /// Whitelist of provider names to track (only track these if not empty)
+  ///
+  /// When this set is not empty, only providers whose names are in this set
+  /// will be tracked. This is useful for focusing on specific providers
+  /// during debugging.
+  ///
+  /// Example: `{'counterProvider', 'userProvider'}`
+  ///
+  /// If empty (default), all providers are tracked (unless in ignoredProviders).
+  final Set<String> trackedProviders;
+
+  /// Blacklist of provider names to ignore
+  ///
+  /// Providers whose names are in this set will not be tracked, even if
+  /// they match the packagePrefixes or trackedProviders filters.
+  ///
+  /// Example: `{'loggingProvider', 'analyticsProvider'}`
+  ///
+  /// This filter is applied after trackedProviders filter.
+  final Set<String> ignoredProviders;
+
+  /// Custom filter function for fine-grained control
+  ///
+  /// Provides a custom predicate to determine whether a provider should
+  /// be tracked. The function receives the provider name and type as
+  /// parameters and should return true if the provider should be tracked.
+  ///
+  /// Example:
+  /// ```dart
+  /// providerFilter: (name, type) {
+  ///   // Only track StateProvider and StateNotifierProvider
+  ///   return type.contains('State');
+  /// }
+  /// ```
+  ///
+  /// This filter is applied after trackedProviders and ignoredProviders.
+  final bool Function(String providerName, String providerType)? providerFilter;
+
   const TrackerConfig({
     this.enabled = true,
     this.packagePrefixes = const [],
@@ -89,6 +127,9 @@ class TrackerConfig {
     this.maxCallChainDepth = 10,
     this.maxValueLength = 200,
     this.skipUnchangedValues = true,
+    this.trackedProviders = const {},
+    this.ignoredProviders = const {},
+    this.providerFilter,
     this.ignoredPackagePrefixes = const [
       'package:flutter/',
       'package:flutter_riverpod/',
@@ -109,6 +150,9 @@ class TrackerConfig {
     int maxCallChainDepth = 10,
     int maxValueLength = 200,
     bool skipUnchangedValues = true,
+    Set<String> trackedProviders = const {},
+    Set<String> ignoredProviders = const {},
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String> additionalPackages = const [],
     List<String> additionalIgnored = const [],
     List<String> ignoredFilePatterns = const [],
@@ -121,6 +165,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth,
       maxValueLength: maxValueLength,
       skipUnchangedValues: skipUnchangedValues,
+      trackedProviders: trackedProviders,
+      ignoredProviders: ignoredProviders,
+      providerFilter: providerFilter,
       ignoredPackagePrefixes: [
         'package:flutter/',
         'package:flutter_riverpod/',
@@ -155,6 +202,9 @@ class TrackerConfig {
     int? maxCallChainDepth,
     int? maxValueLength,
     bool? skipUnchangedValues,
+    Set<String>? trackedProviders,
+    Set<String>? ignoredProviders,
+    bool Function(String providerName, String providerType)? providerFilter,
     List<String>? ignoredPackagePrefixes,
     List<String>? ignoredFilePatterns,
   }) {
@@ -166,6 +216,9 @@ class TrackerConfig {
       maxCallChainDepth: maxCallChainDepth ?? this.maxCallChainDepth,
       maxValueLength: maxValueLength ?? this.maxValueLength,
       skipUnchangedValues: skipUnchangedValues ?? this.skipUnchangedValues,
+      trackedProviders: trackedProviders ?? this.trackedProviders,
+      ignoredProviders: ignoredProviders ?? this.ignoredProviders,
+      providerFilter: providerFilter ?? this.providerFilter,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,

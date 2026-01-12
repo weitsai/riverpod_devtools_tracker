@@ -73,6 +73,12 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     if (!config.enabled) return;
 
     final providerName = _getProviderName(context);
+    final providerType = _getProviderType(context);
+
+    // Check if this provider should be tracked
+    if (!_shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
 
     // 捕獲初始堆疊（用於異步 Provider）
     final stackTrace = StackTrace.current;
@@ -100,14 +106,20 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    final providerName = _getProviderName(context);
+    final providerType = _getProviderType(context);
+
+    // Check if this provider should be tracked
+    if (!_shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
+
     // Check if we should skip updates where the value hasn't changed
     if (config.skipUnchangedValues &&
         _areValuesEqual(previousValue, newValue)) {
       // Value hasn't changed, skip this update event
       return;
     }
-
-    final providerName = _getProviderName(context);
 
     // Capture current stack trace to track change source
     final stackTrace = StackTrace.current;
@@ -145,13 +157,19 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     if (!config.enabled) return;
 
     final providerName = _getProviderName(context);
+    final providerType = _getProviderType(context);
+
+    // Check if this provider should be tracked
+    if (!_shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
 
     // 注意：不在這裡清理堆疊，因為 provider 可能被 invalidate 後立即重新創建
     // 堆疊會在下一次 add 或有效 update 時自動更新
 
     _postStateChange(
       providerName: providerName,
-      providerType: _getProviderType(context),
+      providerType: providerType,
       changeType: 'dispose',
     );
   }
@@ -164,11 +182,19 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ) {
     if (!config.enabled) return;
 
+    final providerName = _getProviderName(context);
+    final providerType = _getProviderType(context);
+
+    // Check if this provider should be tracked
+    if (!_shouldTrackProvider(providerName, providerType)) {
+      return;
+    }
+
     final callChain = _parser.parseCallChain(stackTrace);
 
     _postStateChange(
-      providerName: _getProviderName(context),
-      providerType: _getProviderType(context),
+      providerName: providerName,
+      providerType: providerType,
       changeType: 'error',
       currentValue: {
         'error': error.toString(),
@@ -221,6 +247,36 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     }
 
     return 'Unknown';
+  }
+
+  /// Determine if a provider should be tracked based on configured filters
+  ///
+  /// Applies filters in the following order:
+  /// 1. Blacklist (ignoredProviders) - if matched, reject
+  /// 2. Whitelist (trackedProviders) - if non-empty and not matched, reject
+  /// 3. Custom filter (providerFilter) - if provided and returns false, reject
+  ///
+  /// Returns true if the provider should be tracked, false otherwise.
+  bool _shouldTrackProvider(String providerName, String providerType) {
+    // Check blacklist first - highest priority
+    if (config.ignoredProviders.contains(providerName)) {
+      return false;
+    }
+
+    // Check whitelist - if non-empty, only track providers in the list
+    if (config.trackedProviders.isNotEmpty) {
+      if (!config.trackedProviders.contains(providerName)) {
+        return false;
+      }
+    }
+
+    // Apply custom filter function if provided
+    if (config.providerFilter != null) {
+      return config.providerFilter!(providerName, providerType);
+    }
+
+    // No filters matched, track the provider
+    return true;
   }
 
   /// Check if it's a provider file
