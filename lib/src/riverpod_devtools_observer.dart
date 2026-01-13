@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meta/meta.dart';
 
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
@@ -110,10 +109,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
     // If still over limit, remove oldest entries
     if (_providerStacks.length > config.maxStackCacheSize) {
-      final entriesToRemove =
-          _providerStacks.length - config.maxStackCacheSize;
-      final sortedEntries = _providerStacks.entries.toList()
-        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+      final entriesToRemove = _providerStacks.length - config.maxStackCacheSize;
+      final sortedEntries =
+          _providerStacks.entries.toList()
+            ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
 
       for (var i = 0; i < entriesToRemove; i++) {
         _providerStacks.remove(sortedEntries[i].key);
