@@ -12,6 +12,7 @@ import 'models/provider_state_info.dart';
 import 'widgets/provider_list_tile.dart';
 import 'widgets/state_detail_panel.dart';
 import 'widgets/timeline_view.dart';
+import 'widgets/performance_panel.dart';
 import 'theme/extension_theme.dart';
 
 /// View mode for the extension
@@ -66,6 +67,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   // Filter overlay
   final LayerLink _filterLayerLink = LayerLink();
   OverlayEntry? _filterOverlay;
+
+  // Performance statistics (from latest event)
+  Map<String, dynamic>? _performanceStats;
+
+  // Current tab index (0: State Inspector, 1: Performance)
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
@@ -150,6 +157,13 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
 
         if (_providerStates.length > 500) {
           _providerStates.removeLast();
+        }
+
+        // Update performance statistics if available
+        if (data['performanceStats'] != null) {
+          _performanceStats = Map<String, dynamic>.from(
+            data['performanceStats'] as Map<dynamic, dynamic>,
+          );
         }
 
         // Invalidate cache since data changed
@@ -333,6 +347,36 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                ),
+              ),
+              const Spacer(),
+              // Tab buttons
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1117),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF30363D)),
+                ),
+                child: Row(
+                  children: [
+                    _buildTabButton(
+                      label: 'State Inspector',
+                      icon: Icons.view_list,
+                      isSelected: _currentTabIndex == 0,
+                      onTap: () => setState(() => _currentTabIndex = 0),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: const Color(0xFF30363D),
+                    ),
+                    _buildTabButton(
+                      label: 'Performance',
+                      icon: Icons.speed,
+                      isSelected: _currentTabIndex == 1,
+                      onTap: () => setState(() => _currentTabIndex = 1),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
@@ -628,6 +672,12 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   }
 
   Widget _buildContent(AppLocalizations l10n) {
+    // Show performance panel when Performance tab is selected
+    if (_currentTabIndex == 1) {
+      return PerformancePanel(performanceStats: _performanceStats);
+    }
+
+    // Show state inspector when State Inspector tab is selected
     if (_providerStates.isEmpty) {
       return Center(
         child: Column(
@@ -743,6 +793,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       _providerStates.clear();
       _latestStates.clear();
       _selectedProvider = null;
+      _performanceStats = null; // Clear performance statistics
     });
   }
 
@@ -1259,5 +1310,46 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       ..setAttribute('download', filename)
       ..click();
     html.Url.revokeObjectUrl(url);
+  }
+
+  /// Build tab button
+  Widget _buildTabButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

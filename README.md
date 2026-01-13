@@ -278,6 +278,7 @@ RiverpodDevToolsObserver(
 2. If `trackedProviders` is empty, providers in `ignoredProviders` are filtered out
 3. After whitelist/blacklist filtering, `providerFilter` function is applied if provided
 4. The `skipUnchangedValues` option (enabled by default) prevents tracking updates where the value hasn't actually changed
+
 ### Memory Management
 
 The tracker automatically manages memory to prevent leaks during long debugging sessions:
@@ -328,6 +329,33 @@ final observer = RiverpodDevToolsObserver(
 observer.dispose();
 ```
 
+### Performance Metrics Collection
+
+You can enable performance metrics collection to analyze the overhead of the tracker itself:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app_name',
+    collectPerformanceMetrics: true,  // Enable performance tracking
+  ),
+)
+```
+
+When enabled, the tracker will collect detailed metrics including:
+- **Stack trace parsing time**: Time spent analyzing call stacks
+- **Value serialization time**: Time spent converting provider values
+- **Total tracking time**: Overall time for each tracking operation
+- **Call chain depth**: Number of stack frames captured
+- **Value size**: Size of serialized values
+
+These metrics are displayed in the **Performance** tab of the DevTools extension, showing:
+- Overall statistics (total operations, total time, average time)
+- Per-provider statistics (update count, average/min/max times)
+- Breakdown of parsing vs serialization time
+
+**Note**: Performance metrics collection adds a small overhead. It's recommended to disable it in production builds.
+
 ## Console Output
 
 When `enableConsoleOutput` is true, you'll see formatted output like this:
@@ -349,8 +377,9 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 
 ## DevTools Extension Features
 
-The extension provides a comprehensive debugging interface:
+The extension provides a comprehensive debugging interface with two main tabs:
 
+### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
 - **Timeline View** - Visual timeline showing events over time with zoom and pan controls
 - **Location Info** - Shows the exact file and line number where each change originated
@@ -358,7 +387,20 @@ The extension provides a comprehensive debugging interface:
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
 - **Event Export** - Export events to JSON or CSV format for offline analysis and sharing
+
+### Performance Tab
+- **Overall Statistics** - Total operations, total time, and average time across all providers
+- **Per-Provider Metrics** - Detailed performance breakdown for each provider:
+  - Update count and frequency
+  - Average, minimum, and maximum tracking time
+  - Stack trace parsing time
+  - Value serialization time
+- **Performance Indicators** - Visual feedback (Excellent/Good/Fair/Slow) based on tracking overhead
+- **Expandable Details** - Click on any provider to see comprehensive metrics
+
+### Common Features
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
+- **Tab Navigation** - Easily switch between state inspection and performance analysis
 
 ### Provider State Filtering
 

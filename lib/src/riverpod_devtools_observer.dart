@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
+import 'performance_metrics.dart';
 
 /// Riverpod DevTools Observer
 ///
@@ -48,6 +49,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
   /// Timestamp of last manual cleanup (for throttling)
   DateTime? _lastManualCleanup;
+
+  /// Performance statistics (only collected when enabled)
+  final PerformanceStatistics _performanceStats = PerformanceStatistics();
 
   /// Records the most recent valid trigger stack trace for each Provider (used for async Providers)
   /// Key: Provider name
@@ -163,6 +167,12 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     _providerStacks.clear();
   }
 
+  /// Get current performance statistics
+  ///
+  /// Returns the accumulated performance statistics for all tracked providers.
+  /// Only available when [TrackerConfig.collectPerformanceMetrics] is enabled.
+  PerformanceStatistics get performanceStats => _performanceStats;
+
   @override
   void didAddProvider(ProviderObserverContext context, Object? value) {
     if (!config.enabled) return;
@@ -175,21 +185,45 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       return;
     }
 
+    // Start performance measurement if enabled
+    final tracker = _PerformanceTracker(enabled: config.collectPerformanceMetrics);
+    tracker.startTotal();
+
     // Capture initial stack trace (for async Providers)
+    tracker.startStackParse();
     final stackTrace = StackTrace.current;
     final callChain = _parser.parseCallChain(stackTrace);
     final triggerLocation = _parser.findTriggerLocation(stackTrace);
+    tracker.stopStackParse();
 
     // Save valid stack information for later use when async completes
     _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
 
+    // Measure serialization time
+    tracker.startSerialization();
+    final serializedValue = _serializeValue(value);
+    tracker.stopSerialization();
+
+    tracker.stopTotal();
+
+    // Create and record performance metrics if enabled
+    final metrics = tracker.createMetrics(
+      callChainDepth: callChain.length,
+      valueSize: serializedValue.toString().length,
+    );
+    if (metrics != null) {
+      _performanceStats.recordOperation(providerName, metrics);
+    }
+
     _postStateChange(
       providerName: providerName,
-      providerType: getProviderType(context),
+      providerType: providerType,
       changeType: 'add',
       currentValue: value,
+      serializedValue: serializedValue,
       triggerLocation: triggerLocation,
       callChain: callChain,
+      metrics: metrics,
     );
   }
 
@@ -216,10 +250,16 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       return;
     }
 
+    // Start performance measurement if enabled
+    final tracker = _PerformanceTracker(enabled: config.collectPerformanceMetrics);
+    tracker.startTotal();
+
     // Capture current stack trace to track change source
+    tracker.startStackParse();
     final stackTrace = StackTrace.current;
     var callChain = _parser.parseCallChain(stackTrace);
     var triggerLocation = _parser.findTriggerLocation(stackTrace);
+    tracker.stopStackParse();
 
     // Check if current stack trace has valid user code (non-provider files)
     final hasUserCode = _hasValidUserCode(callChain);
@@ -236,14 +276,35 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       }
     }
 
+    // Measure serialization time
+    tracker.startSerialization();
+    final serializedPreviousValue = _serializeValue(previousValue);
+    final serializedCurrentValue = _serializeValue(newValue);
+    tracker.stopSerialization();
+
+    tracker.stopTotal();
+
+    // Create and record performance metrics if enabled
+    final metrics = tracker.createMetrics(
+      callChainDepth: callChain.length,
+      valueSize: serializedCurrentValue.toString().length +
+                 serializedPreviousValue.toString().length,
+    );
+    if (metrics != null) {
+      _performanceStats.recordOperation(providerName, metrics);
+    }
+
     _postStateChange(
       providerName: providerName,
-      providerType: getProviderType(context),
+      providerType: providerType,
       changeType: 'update',
       previousValue: previousValue,
+      serializedPreviousValue: serializedPreviousValue,
       currentValue: newValue,
+      serializedValue: serializedCurrentValue,
       triggerLocation: triggerLocation,
       callChain: callChain,
+      metrics: metrics,
     );
   }
 
@@ -424,8 +485,11 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     required String changeType,
     Object? previousValue,
     Object? currentValue,
+    dynamic serializedPreviousValue,
+    dynamic serializedValue,
     LocationInfo? triggerLocation,
     List<LocationInfo>? callChain,
+    TrackingMetrics? metrics,
   }) {
     try {
       final eventData = <String, dynamic>{
@@ -433,8 +497,8 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         'providerName': providerName,
         'providerType': providerType,
         'changeType': changeType,
-        'previousValue': _serializeValue(previousValue),
-        'currentValue': _serializeValue(currentValue),
+        'previousValue': serializedPreviousValue ?? _serializeValue(previousValue),
+        'currentValue': serializedValue ?? _serializeValue(currentValue),
         'timestamp': DateTime.now().toIso8601String(),
       };
 
@@ -449,6 +513,16 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
       // Call chain
       if (callChain != null && callChain.isNotEmpty) {
         eventData['callChain'] = callChain.map((l) => l.toJson()).toList();
+      }
+
+      // Performance metrics
+      if (metrics != null) {
+        eventData['performanceMetrics'] = metrics.toJson();
+      }
+
+      // Add overall performance statistics if metrics collection is enabled
+      if (config.collectPerformanceMetrics) {
+        eventData['performanceStats'] = _performanceStats.toJson();
       }
 
       // Send to DevTools using postEvent
@@ -698,4 +772,59 @@ class _ProviderStackTrace {
     required this.callChain,
     required this.timestamp,
   });
+}
+
+/// Helper class for tracking performance metrics
+class _PerformanceTracker {
+  final bool enabled;
+  final Stopwatch? _totalStopwatch;
+  final Stopwatch? _stackParseStopwatch;
+  final Stopwatch? _serializeStopwatch;
+
+  _PerformanceTracker({required this.enabled})
+      : _totalStopwatch = enabled ? Stopwatch() : null,
+        _stackParseStopwatch = enabled ? Stopwatch() : null,
+        _serializeStopwatch = enabled ? Stopwatch() : null;
+
+  /// Start total timing
+  void startTotal() => _totalStopwatch?.start();
+
+  /// Start stack parse timing
+  void startStackParse() => _stackParseStopwatch?.start();
+
+  /// Stop stack parse timing
+  void stopStackParse() => _stackParseStopwatch?.stop();
+
+  /// Start serialization timing
+  void startSerialization() => _serializeStopwatch?.start();
+
+  /// Stop serialization timing
+  void stopSerialization() => _serializeStopwatch?.stop();
+
+  /// Stop total timing
+  void stopTotal() => _totalStopwatch?.stop();
+
+  /// Create tracking metrics from recorded times
+  TrackingMetrics? createMetrics({
+    required int callChainDepth,
+    required int valueSize,
+  }) {
+    if (!enabled) return null;
+
+    final total = _totalStopwatch;
+    final stackParse = _stackParseStopwatch;
+    final serialize = _serializeStopwatch;
+
+    if (total == null || stackParse == null || serialize == null) {
+      return null;
+    }
+
+    return TrackingMetrics(
+      stackTraceParsingTime: stackParse.elapsed,
+      valueSerializationTime: serialize.elapsed,
+      totalTime: total.elapsed,
+      callChainDepth: callChainDepth,
+      valueSize: valueSize,
+    );
+  }
 }
