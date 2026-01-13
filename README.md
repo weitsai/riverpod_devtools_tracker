@@ -396,6 +396,7 @@ The DevTools extension supports exporting tracked events for offline analysis an
   "totalEvents": 42,
   "events": [
     {
+      "id": "1234567890",
       "timestamp": "2024-01-15T10:29:45.123Z",
       "changeType": "UPDATE",
       "providerName": "counterProvider",
@@ -403,11 +404,21 @@ The DevTools extension supports exporting tracked events for offline analysis an
       "previousValue": 0,
       "currentValue": 1,
       "location": "lib/screens/home_screen.dart:45",
+      "file": "lib/screens/home_screen.dart",
+      "line": 45,
+      "function": "_incrementCounter",
       "callChain": [
         {
+          "location": "lib/screens/home_screen.dart:45",
           "file": "lib/screens/home_screen.dart",
           "line": 45,
           "function": "_incrementCounter"
+        },
+        {
+          "location": "lib/widgets/counter_button.dart:23",
+          "file": "lib/widgets/counter_button.dart",
+          "line": 23,
+          "function": "_onPressed"
         }
       ]
     }

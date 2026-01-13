@@ -13,7 +13,6 @@ void main() {
           'currentValue': 1,
           'timestamp': '2025-01-05T12:00:00.000Z',
           'changeType': 'update',
-          'stackTrace': [],
           'location': 'main.dart:42',
           'file': 'lib/main.dart',
           'line': 42,
@@ -43,37 +42,8 @@ void main() {
         expect(info.providerName, 'Unknown');
         expect(info.providerType, 'Unknown');
         expect(info.changeType, 'update');
-        expect(info.stackTrace, isEmpty);
         expect(info.callChain, isEmpty);
         expect(info.location, isNull);
-      });
-
-      test('parses stackTrace entries', () {
-        final json = {
-          'id': 'test-id',
-          'providerName': 'testProvider',
-          'providerType': 'Provider',
-          'timestamp': '2025-01-05T12:00:00.000Z',
-          'changeType': 'update',
-          'stackTrace': [
-            {
-              'file': 'lib/main.dart',
-              'line': 10,
-              'column': 5,
-              'function': 'main',
-            },
-            {'file': 'lib/app.dart', 'line': 20, 'function': 'build'},
-          ],
-        };
-
-        final info = ProviderStateInfo.fromJson(json);
-
-        expect(info.stackTrace.length, 2);
-        expect(info.stackTrace[0].file, 'lib/main.dart');
-        expect(info.stackTrace[0].line, 10);
-        expect(info.stackTrace[0].column, 5);
-        expect(info.stackTrace[1].file, 'lib/app.dart');
-        expect(info.stackTrace[1].column, isNull);
       });
 
       test('parses callChain entries', () {
@@ -83,7 +53,6 @@ void main() {
           'providerType': 'Provider',
           'timestamp': '2025-01-05T12:00:00.000Z',
           'changeType': 'update',
-          'stackTrace': [],
           'callChain': [
             {
               'location': 'main.dart:10',
@@ -114,7 +83,6 @@ void main() {
           currentValue: 1,
           timestamp: DateTime.parse('2025-01-05T12:00:00.000Z'),
           changeType: 'update',
-          stackTrace: [],
         );
 
         final json = info.toJson();
@@ -139,7 +107,6 @@ void main() {
           currentValue: null,
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedPreviousValue, 'null');
@@ -155,7 +122,6 @@ void main() {
           currentValue: 'hello',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedPreviousValue, '42');
@@ -171,7 +137,6 @@ void main() {
           currentValue: {'type': 'int', 'value': '42'},
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, '42');
@@ -186,7 +151,6 @@ void main() {
           currentValue: {'type': 'Exception', 'error': 'Something went wrong'},
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, 'Error: Something went wrong');
@@ -201,7 +165,6 @@ void main() {
           currentValue: 'AsyncLoading<String>()',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, contains('Loading'));
@@ -217,7 +180,6 @@ void main() {
           currentValue: 'AsyncLoading<int>(value: 42)',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, contains('Loading'));
@@ -233,7 +195,6 @@ void main() {
           currentValue: 'AsyncData<String>(value: hello world)',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, contains('Data'));
@@ -250,7 +211,6 @@ void main() {
               'AsyncError<String>(error: Network error, stackTrace: ...)',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.formattedCurrentValue, contains('Error'));
@@ -266,7 +226,6 @@ void main() {
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
           locationFile: 'lib/main.dart',
           locationLine: 42,
           locationFunction: 'onTap',
@@ -280,21 +239,26 @@ void main() {
         expect(trigger.function, 'onTap');
       });
 
-      test('returns first non-framework entry from stackTrace', () {
+      test('returns first entry from callChain when no direct location', () {
         final info = ProviderStateInfo(
           id: 'test',
           providerName: 'test',
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [
-            StackTraceEntry(file: 'package:flutter/widgets.dart', line: 100),
-            StackTraceEntry(
+          callChain: [
+            CallChainEntry(
+              location: 'home.dart:50',
               file: 'lib/screens/home.dart',
               line: 50,
               function: 'build',
             ),
-            StackTraceEntry(file: 'lib/main.dart', line: 10),
+            CallChainEntry(
+              location: 'main.dart:10',
+              file: 'lib/main.dart',
+              line: 10,
+              function: 'main',
+            ),
           ],
         );
 
@@ -303,35 +267,16 @@ void main() {
         expect(trigger, isNotNull);
         expect(trigger!.file, 'lib/screens/home.dart');
         expect(trigger.line, 50);
+        expect(trigger.function, 'build');
       });
 
-      test('returns first entry if all are framework code', () {
+      test('returns null when no location info available', () {
         final info = ProviderStateInfo(
           id: 'test',
           providerName: 'test',
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [
-            StackTraceEntry(file: 'package:flutter/widgets.dart', line: 100),
-            StackTraceEntry(file: 'package:flutter/material.dart', line: 200),
-          ],
-        );
-
-        final trigger = info.triggerLocation;
-
-        expect(trigger, isNotNull);
-        expect(trigger!.file, 'package:flutter/widgets.dart');
-      });
-
-      test('returns null for empty stackTrace without location', () {
-        final info = ProviderStateInfo(
-          id: 'test',
-          providerName: 'test',
-          providerType: 'test',
-          timestamp: DateTime.now(),
-          changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.triggerLocation, isNull);
@@ -346,7 +291,6 @@ void main() {
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
           location: 'main.dart:42',
         );
 
@@ -360,7 +304,6 @@ void main() {
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
           locationFile: 'lib/main.dart',
         );
 
@@ -374,7 +317,6 @@ void main() {
           providerType: 'test',
           timestamp: DateTime.now(),
           changeType: 'update',
-          stackTrace: [],
         );
 
         expect(info.hasLocation, false);

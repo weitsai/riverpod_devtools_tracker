@@ -9,9 +9,8 @@ class ProviderStateInfo {
   final dynamic currentValue;
   final DateTime timestamp;
   final String changeType;
-  final List<StackTraceEntry> stackTrace;
 
-  /// Direct location string
+  /// Direct location string (Change Source)
   final String? location;
   final String? locationFile;
   final int? locationLine;
@@ -28,7 +27,6 @@ class ProviderStateInfo {
     this.currentValue,
     required this.timestamp,
     required this.changeType,
-    required this.stackTrace,
     this.location,
     this.locationFile,
     this.locationLine,
@@ -50,12 +48,7 @@ class ProviderStateInfo {
               ? DateTime.parse(json['timestamp'] as String)
               : DateTime.now(),
       changeType: json['changeType'] as String? ?? 'update',
-      stackTrace:
-          (json['stackTrace'] as List<dynamic>?)
-              ?.map((e) => StackTraceEntry.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      // Support direct location field
+      // Support direct location field (Change Source)
       location: json['location'] as String?,
       locationFile: json['file'] as String?,
       locationLine: json['line'] as int?,
@@ -78,7 +71,13 @@ class ProviderStateInfo {
       'currentValue': currentValue,
       'timestamp': timestamp.toIso8601String(),
       'changeType': changeType,
-      'stackTrace': stackTrace.map((e) => e.toJson()).toList(),
+      // Include Change Source information
+      if (location != null) 'location': location,
+      if (locationFile != null) 'file': locationFile,
+      if (locationLine != null) 'line': locationLine,
+      if (locationFunction != null) 'function': locationFunction,
+      // Include Call Chain
+      'callChain': callChain.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -170,7 +169,7 @@ class ProviderStateInfo {
 
   /// Get the code location that triggered the change
   StackTraceEntry? get triggerLocation {
-    // Prefer direct location info
+    // Return location info from Change Source if available
     if (locationFile != null && locationFile!.isNotEmpty) {
       return StackTraceEntry(
         file: locationFile!,
@@ -179,13 +178,17 @@ class ProviderStateInfo {
       );
     }
 
-    // Otherwise find from stackTrace
-    for (final entry in stackTrace) {
-      if (!entry.isFramework && !entry.isRiverpodInternal) {
-        return entry;
-      }
+    // Otherwise try to get from call chain
+    if (callChain.isNotEmpty) {
+      final first = callChain.first;
+      return StackTraceEntry(
+        file: first.file,
+        line: first.line,
+        function: first.function,
+      );
     }
-    return stackTrace.isNotEmpty ? stackTrace.first : null;
+
+    return null;
   }
 
   /// Get location string directly
@@ -294,5 +297,14 @@ class CallChainEntry {
       line: json['line'] as int? ?? 0,
       function: json['function'] as String? ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'location': location,
+      'file': file,
+      'line': line,
+      'function': function,
+    };
   }
 }
