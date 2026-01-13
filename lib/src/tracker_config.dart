@@ -157,7 +157,6 @@ class TrackerConfig {
       } catch (e) {
         // In debug mode, warn about extraction failures
         assert(() {
-          // ignore: avoid_print
           print('Warning: Unable to extract name from provider $p: $e');
           return true;
         }());

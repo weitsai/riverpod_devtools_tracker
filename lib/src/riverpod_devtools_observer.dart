@@ -110,10 +110,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
     // If still over limit, remove oldest entries
     if (_providerStacks.length > config.maxStackCacheSize) {
-      final entriesToRemove = _providerStacks.length - config.maxStackCacheSize;
-      final sortedEntries =
-          _providerStacks.entries.toList()
-            ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+      final entriesToRemove =
+          _providerStacks.length - config.maxStackCacheSize;
+      final sortedEntries = _providerStacks.entries.toList()
+        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
 
       for (var i = 0; i < entriesToRemove; i++) {
         _providerStacks.remove(sortedEntries[i].key);
