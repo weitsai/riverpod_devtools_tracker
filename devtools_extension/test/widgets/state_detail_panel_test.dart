@@ -34,7 +34,6 @@ void main() {
         changeType: 'add',
         currentValue: '42',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -53,7 +52,6 @@ void main() {
         changeType: 'add',
         currentValue: '100',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -73,7 +71,6 @@ void main() {
         previousValue: '5',
         currentValue: '10',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -91,7 +88,6 @@ void main() {
         changeType: 'add',
         currentValue: 'test',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
         location: 'lib/main.dart:42',
         locationFile: 'lib/main.dart',
         locationLine: 42,
@@ -113,7 +109,6 @@ void main() {
         changeType: 'add',
         currentValue: 'test',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
         callChain: [
           CallChainEntry(
             location: 'lib/main.dart:10',
@@ -150,7 +145,6 @@ void main() {
         previousValue: longValue,
         currentValue: '10',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -181,7 +175,6 @@ void main() {
         changeType: 'add',
         currentValue: '{"name": "test", "value": 42}',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -206,7 +199,6 @@ void main() {
         changeType: 'add',
         currentValue: 'test',
         timestamp: DateTime(2024, 1, 1, 12, 30, 45),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -225,7 +217,6 @@ void main() {
         previousValue: null,
         currentValue: 'new value',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -245,7 +236,6 @@ void main() {
         changeType: 'add',
         currentValue: complexJson,
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -263,7 +253,6 @@ void main() {
         previousValue: '42',
         currentValue: null,
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -281,7 +270,6 @@ void main() {
         changeType: 'error',
         currentValue: 'Exception: Something went wrong',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -300,7 +288,6 @@ void main() {
         previousValue: 'old',
         currentValue: 'new',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
         // Add trigger location to show copy button
         location: 'lib/test.dart:100',
         locationFile: 'lib/test.dart',
@@ -321,7 +308,6 @@ void main() {
         changeType: 'add',
         currentValue: '[1, 2, 3, 4, 5]',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -339,7 +325,6 @@ void main() {
         changeType: 'add',
         currentValue: '{"key1": "value1", "key2": "value2"}',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -367,7 +352,6 @@ void main() {
         changeType: 'add',
         currentValue: 'test',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
         callChain: longCallChain,
       );
 
@@ -386,7 +370,6 @@ void main() {
         changeType: 'add',
         currentValue: 'async value',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));
@@ -403,7 +386,6 @@ void main() {
         changeType: 'add',
         currentValue: 'test',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
         callChain: const [],
       );
 
@@ -422,7 +404,6 @@ void main() {
         changeType: 'add',
         currentValue: 'short',
         timestamp: DateTime(2024, 1, 1),
-        stackTrace: const [],
       );
 
       await tester.pumpWidget(createTestWidget(stateInfo));

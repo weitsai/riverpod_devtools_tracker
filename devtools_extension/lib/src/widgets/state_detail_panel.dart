@@ -793,7 +793,6 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
 
   Widget _buildStackTraceSection() {
     final hasCallChain = stateInfo.callChain.isNotEmpty;
-    final hasStackTrace = stateInfo.stackTrace.isNotEmpty;
     final hasExplicitLocation =
         stateInfo.location != null || stateInfo.locationFile != null;
 
@@ -802,7 +801,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
       return const SizedBox.shrink();
     }
 
-    if (!hasCallChain && !hasStackTrace) return const SizedBox.shrink();
+    if (!hasCallChain) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -819,9 +818,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               const Icon(Icons.layers, color: Color(0xFF8B949E), size: 18),
               const SizedBox(width: 8),
               Text(
-                hasCallChain
-                    ? AppLocalizations.of(context)!.callChain
-                    : AppLocalizations.of(context)!.stackTrace,
+                AppLocalizations.of(context)!.callChain,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -831,9 +828,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               const Spacer(),
               Text(
                 AppLocalizations.of(context)!.itemsCount(
-                  hasCallChain
-                      ? stateInfo.callChain.length
-                      : stateInfo.stackTrace.length,
+                  stateInfo.callChain.length,
                 ),
                 style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
               ),
@@ -845,8 +840,7 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
               color: const Color(0xFF0D1117),
               borderRadius: BorderRadius.circular(8),
             ),
-            child:
-                hasCallChain ? _buildCallChainList() : _buildStackTraceList(),
+            child: _buildCallChainList(),
           ),
         ],
       ),
@@ -917,89 +911,6 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
     );
   }
 
-  Widget _buildStackTraceList() {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: stateInfo.stackTrace.length,
-      separatorBuilder:
-          (_, _) => const Divider(height: 1, color: Color(0xFF21262D)),
-      itemBuilder: (context, index) {
-        final entry = stateInfo.stackTrace[index];
-        final isUserCode = !entry.isFramework && !entry.isRiverpodInternal;
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color:
-              isUserCode
-                  ? const Color(0xFF238636).withValues(alpha: 0.1)
-                  : null,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 24,
-                child: Text(
-                  '#$index',
-                  style: TextStyle(
-                    color:
-                        isUserCode
-                            ? const Color(0xFF3FB950)
-                            : const Color(0xFF484F58),
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.shortFileName,
-                      style: TextStyle(
-                        color:
-                            isUserCode
-                                ? const Color(0xFF58A6FF)
-                                : const Color(0xFF8B949E),
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    if (entry.function != null)
-                      Text(
-                        entry.function!,
-                        style: TextStyle(
-                          color:
-                              isUserCode
-                                  ? const Color(0xFFD2A8FF)
-                                  : const Color(0xFF6E7681),
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (entry.line != null)
-                Text(
-                  ':${entry.line}',
-                  style: TextStyle(
-                    color:
-                        isUserCode
-                            ? const Color(0xFFFFA657)
-                            : const Color(0xFF484F58),
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Color _getChangeTypeColor() {
     switch (stateInfo.changeType) {
