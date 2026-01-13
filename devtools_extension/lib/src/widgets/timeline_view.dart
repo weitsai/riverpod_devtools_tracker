@@ -78,6 +78,9 @@ class _TimelineViewState extends State<TimelineView> {
   DateTime? _startTime;
   Duration? _duration;
 
+  // Hovered event for highlighting
+  ProviderStateInfo? _hoveredEvent;
+
   @override
   Widget build(BuildContext context) {
     if (widget.events.isEmpty) {
@@ -176,40 +179,61 @@ class _TimelineViewState extends State<TimelineView> {
   Widget _buildTimelineChart() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onTapDown: (details) {
-            final event = _findEventAtPosition(
-              details.localPosition,
+        return MouseRegion(
+          onHover: (event) {
+            final hoveredEvent = _findEventAtPosition(
+              event.localPosition,
               constraints.biggest,
             );
-            if (event != null) {
-              widget.onEventSelected(event);
+            if (hoveredEvent != _hoveredEvent) {
+              setState(() {
+                _hoveredEvent = hoveredEvent;
+              });
             }
           },
-          onHorizontalDragUpdate: (details) {
-            setState(() {
-              _panOffset += details.delta.dx;
-              // Limit pan offset to reasonable bounds
-              final maxPan = constraints.maxWidth * _zoomLevel;
-              _panOffset = _panOffset.clamp(-maxPan, maxPan);
-            });
+          onExit: (_) {
+            if (_hoveredEvent != null) {
+              setState(() {
+                _hoveredEvent = null;
+              });
+            }
           },
-          child: Container(
-            color: const Color(0xFF0D1117),
-            child: CustomPaint(
-              painter: TimelinePainter(
-                events: widget.events,
-                selectedEvent: widget.selectedEvent,
-                zoomLevel: _zoomLevel,
-                panOffset: _panOffset,
-                onLanesCalculated: (lanes, start, duration) {
-                  // Cache for hit testing
-                  _providerLanes = lanes;
-                  _startTime = start;
-                  _duration = duration;
-                },
+          child: GestureDetector(
+            onTapDown: (details) {
+              final event = _findEventAtPosition(
+                details.localPosition,
+                constraints.biggest,
+              );
+              if (event != null) {
+                widget.onEventSelected(event);
+              }
+            },
+            onHorizontalDragUpdate: (details) {
+              setState(() {
+                _panOffset += details.delta.dx;
+                // Limit pan offset to reasonable bounds
+                final maxPan = constraints.maxWidth * _zoomLevel;
+                _panOffset = _panOffset.clamp(-maxPan, maxPan);
+              });
+            },
+            child: Container(
+              color: const Color(0xFF0D1117),
+              child: CustomPaint(
+                painter: TimelinePainter(
+                  events: widget.events,
+                  selectedEvent: widget.selectedEvent,
+                  hoveredEvent: _hoveredEvent,
+                  zoomLevel: _zoomLevel,
+                  panOffset: _panOffset,
+                  onLanesCalculated: (lanes, start, duration) {
+                    // Cache for hit testing
+                    _providerLanes = lanes;
+                    _startTime = start;
+                    _duration = duration;
+                  },
+                ),
+                size: Size.infinite,
               ),
-              size: Size.infinite,
             ),
           ),
         );
@@ -266,6 +290,7 @@ class _TimelineViewState extends State<TimelineView> {
 class TimelinePainter extends CustomPainter {
   final List<ProviderStateInfo> events;
   final ProviderStateInfo? selectedEvent;
+  final ProviderStateInfo? hoveredEvent;
   final double zoomLevel;
   final double panOffset;
   final Function(Map<String, int>, DateTime, Duration)? onLanesCalculated;
@@ -276,6 +301,7 @@ class TimelinePainter extends CustomPainter {
   TimelinePainter({
     required this.events,
     required this.selectedEvent,
+    this.hoveredEvent,
     required this.zoomLevel,
     required this.panOffset,
     this.onLanesCalculated,
@@ -366,6 +392,24 @@ class TimelinePainter extends CustomPainter {
 
     // Draw provider lane labels
     _drawLaneLabels(canvas, size, providerLanes, laneHeight, axisY, laneCount);
+
+    // Draw hover highlight line if hovering over an event
+    if (hoveredEvent != null) {
+      final lane = providerLanes[hoveredEvent!.providerName];
+      if (lane != null) {
+        final x = TimelineConfig.calculateXPosition(
+          eventTime: hoveredEvent!.timestamp,
+          startTime: startTime,
+          duration: duration,
+          width: size.width,
+          zoomLevel: zoomLevel,
+        );
+        final adjustedX = x + panOffset;
+        final y = axisY + (lane - laneCount / 2) * laneHeight * TimelineConfig.laneHeightFactor;
+
+        _drawHoverHighlight(canvas, size, adjustedX, y, paint);
+      }
+    }
   }
 
   /// Draw warning message for too many providers
@@ -450,20 +494,64 @@ class TimelinePainter extends CustomPainter {
       textAlign: TextAlign.left,
     );
 
+    final hoveredProviderName = hoveredEvent?.providerName;
+
     for (final entry in providerLanes.entries) {
       final lane = entry.value;
       final y = axisY + (lane - laneCount / 2) * laneHeight * TimelineConfig.laneHeightFactor;
+      final isHovered = hoveredProviderName == entry.key;
 
       textPainter.text = TextSpan(
         text: entry.key,
-        style: const TextStyle(
-          color: Color(0xFF8B949E),
-          fontSize: 10,
+        style: TextStyle(
+          color: isHovered ? const Color(0xFF6366F1) : const Color(0xFF8B949E),
+          fontSize: isHovered ? 14.0 : 12.0,
+          fontWeight: isHovered ? FontWeight.w600 : FontWeight.normal,
         ),
       );
-      textPainter.layout(maxWidth: 150);
-      textPainter.paint(canvas, Offset(8, y - 5));
+      textPainter.layout(maxWidth: 200);
+      textPainter.paint(canvas, Offset(8, y - (isHovered ? 7 : 6)));
     }
+  }
+
+  /// Draw highlight line when hovering over an event
+  void _drawHoverHighlight(
+    Canvas canvas,
+    Size size,
+    double eventX,
+    double eventY,
+    Paint paint,
+  ) {
+    // Draw horizontal line from event to left edge (provider name area)
+    paint
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.5)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    // Draw dashed line from event point to left edge
+    final dashWidth = 5.0;
+    final dashSpace = 3.0;
+    var currentX = eventX;
+
+    while (currentX > 0) {
+      final nextX = (currentX - dashWidth).clamp(0.0, double.infinity);
+      canvas.drawLine(
+        Offset(currentX, eventY),
+        Offset(nextX, eventY),
+        paint,
+      );
+      currentX = nextX - dashSpace;
+    }
+
+    // Draw a glow effect around the event point
+    paint
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(
+      Offset(eventX, eventY),
+      8.0,
+      paint,
+    );
   }
 
   void _drawEvent(
@@ -523,6 +611,7 @@ class TimelinePainter extends CustomPainter {
   bool shouldRepaint(TimelinePainter oldDelegate) {
     return oldDelegate.events != events ||
         oldDelegate.selectedEvent != selectedEvent ||
+        oldDelegate.hoveredEvent != hoveredEvent ||
         oldDelegate.zoomLevel != zoomLevel ||
         oldDelegate.panOffset != panOffset;
   }
