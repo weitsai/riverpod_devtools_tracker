@@ -341,8 +341,10 @@ class TrackerConfig {
       trackedProviders: trackedProviders ?? this.trackedProviders,
       ignoredProviders: ignoredProviders ?? this.ignoredProviders,
       providerFilter: providerFilter ?? this.providerFilter,
-      enableStackTraceCache: enableStackTraceCache ?? this.enableStackTraceCache,
-      maxStackTraceCacheSize: maxStackTraceCacheSize ?? this.maxStackTraceCacheSize,
+      enableStackTraceCache:
+          enableStackTraceCache ?? this.enableStackTraceCache,
+      maxStackTraceCacheSize:
+          maxStackTraceCacheSize ?? this.maxStackTraceCacheSize,
       ignoredPackagePrefixes:
           ignoredPackagePrefixes ?? this.ignoredPackagePrefixes,
       ignoredFilePatterns: ignoredFilePatterns ?? this.ignoredFilePatterns,
