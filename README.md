@@ -303,6 +303,17 @@ TrackerConfig.forPackage(
 - **Long debugging sessions**: Increase `stackExpirationDuration` to keep more history
 - **Memory-constrained devices**: Decrease `maxStackCacheSize` to reduce memory footprint
 
+**Memory Usage Estimation**:
+
+The tracker's memory footprint depends on your configuration:
+- **Default config** (`maxStackCacheSize: 100`): ~50-100 KB
+  - Each stack trace entry: ~500-1000 bytes
+  - 100 entries ≈ 50-100 KB
+- **High-traffic config** (`maxStackCacheSize: 200`): ~100-200 KB
+- **Memory-constrained config** (`maxStackCacheSize: 50`): ~25-50 KB
+
+The `enablePeriodicCleanup: true` (default) ensures memory usage stays within these bounds by removing expired entries every 30 seconds.
+
 **Resource Cleanup**:
 If you're manually managing observer lifecycle, call `dispose()` when done:
 

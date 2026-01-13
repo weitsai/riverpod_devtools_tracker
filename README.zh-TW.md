@@ -263,6 +263,17 @@ TrackerConfig.forPackage(
 - **長時間除錯**：增加 `stackExpirationDuration` 以保留更多歷史記錄
 - **記憶體受限的裝置**：降低 `maxStackCacheSize` 以減少記憶體佔用
 
+**記憶體使用估算**：
+
+追蹤器的記憶體佔用取決於你的配置：
+- **預設配置**（`maxStackCacheSize: 100`）：約 50-100 KB
+  - 每個堆疊追蹤條目：約 500-1000 bytes
+  - 100 個條目 ≈ 50-100 KB
+- **高流量配置**（`maxStackCacheSize: 200`）：約 100-200 KB
+- **記憶體受限配置**（`maxStackCacheSize: 50`）：約 25-50 KB
+
+`enablePeriodicCleanup: true`（預設）確保記憶體使用量保持在這些範圍內，每 30 秒移除過期條目。
+
 **資源清理**：
 如果你手動管理 observer 生命週期，完成時請呼叫 `dispose()`：
 

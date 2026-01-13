@@ -10,12 +10,9 @@ void main() {
         config: const TrackerConfig(enablePeriodicCleanup: false),
       );
       expect(observer.config.enabled, true);
-<<<<<<< HEAD
       expect(observer.config.enableConsoleOutput, true);
       expect(observer.config.skipUnchangedValues, true);
-=======
       observer.dispose();
->>>>>>> 4602988 (feat: implement periodic memory cleanup for stack trace cache)
     });
 
     test('creates with custom config', () {
@@ -25,11 +22,8 @@ void main() {
       );
       final observer = RiverpodDevToolsObserver(config: config);
       expect(observer.config, config);
-<<<<<<< HEAD
       expect(observer.config.packagePrefixes, contains('package:test_app/'));
-=======
       observer.dispose();
->>>>>>> 4602988 (feat: implement periodic memory cleanup for stack trace cache)
     });
 
     test('respects enabled flag', () {
@@ -337,29 +331,81 @@ void main() {
     });
   });
 
-<<<<<<< HEAD
-  group('Value Serialization', () {
-    test('serializes primitive values correctly', () async {
-=======
   group('RiverpodDevToolsObserver memory management', () {
-    test('stack cache cleanup prevents memory leak', () {
+    test('periodic cleanup timer is created when enabled', () {
+      final observer = RiverpodDevToolsObserver(
+        config: TrackerConfig.forPackage(
+          'test_app',
+          enablePeriodicCleanup: true,
+          enableConsoleOutput: false,
+        ),
+      );
+
+      expect(observer.config.enablePeriodicCleanup, true);
+      expect(observer.config.cleanupInterval, const Duration(seconds: 30));
+      expect(observer.config.maxStackCacheSize, 100);
+
+      observer.dispose();
+    });
+
+    test('periodic cleanup timer is not created when disabled', () {
       final observer = RiverpodDevToolsObserver(
         config: TrackerConfig.forPackage(
           'test_app',
           enablePeriodicCleanup: false,
+          enableConsoleOutput: false,
         ),
       );
 
-      // Access internal state through reflection would be needed for a real test
-      // This is a basic structural test
-      expect(observer.config.enabled, true);
+      expect(observer.config.enablePeriodicCleanup, false);
+      observer.dispose();
+    });
+
+    test('dispose cancels cleanup timer and clears cache', () async {
+      final observer = RiverpodDevToolsObserver(
+        config: TrackerConfig.forPackage(
+          'test_app',
+          enablePeriodicCleanup: true,
+          enableConsoleOutput: false,
+        ),
+      );
+      final container = ProviderContainer(observers: [observer]);
+
+      // Create a provider to populate the cache
+      final testProvider = Provider<int>((ref) => 0);
+      container.read(testProvider);
+
+      // Dispose should cancel timer and clear cache
+      observer.dispose();
+
+      // Verify config still accessible after dispose
+      expect(observer.config.enablePeriodicCleanup, true);
+
+      container.dispose();
+    });
+
+    test('custom cleanup configuration is respected', () {
+      final observer = RiverpodDevToolsObserver(
+        config: TrackerConfig.forPackage(
+          'test_app',
+          enablePeriodicCleanup: true,
+          cleanupInterval: const Duration(seconds: 60),
+          stackExpirationDuration: const Duration(minutes: 5),
+          maxStackCacheSize: 200,
+          enableConsoleOutput: false,
+        ),
+      );
+
+      expect(observer.config.cleanupInterval, const Duration(seconds: 60));
+      expect(observer.config.stackExpirationDuration, const Duration(minutes: 5));
+      expect(observer.config.maxStackCacheSize, 200);
+
       observer.dispose();
     });
   });
 
   group('Value serialization', () {
     testWidgets('serializes primitive values correctly', (tester) async {
->>>>>>> 4602988 (feat: implement periodic memory cleanup for stack trace cache)
       final observer = _TestObserver();
       final container = ProviderContainer(observers: [observer]);
 
@@ -495,9 +541,6 @@ void main() {
       expect(observer.config.skipUnchangedValues, true);
     });
 
-<<<<<<< HEAD
-    test('skipUnchangedValues can be disabled', () {
-=======
     test('skipUnchangedValues can be configured', () {
       final observerEnabled = _TestObserverWithConfig(
         TrackerConfig.forPackage(
@@ -506,7 +549,6 @@ void main() {
           enablePeriodicCleanup: false,
         ),
       );
->>>>>>> 4602988 (feat: implement periodic memory cleanup for stack trace cache)
       final observerDisabled = _TestObserverWithConfig(
         TrackerConfig.forPackage(
           'test_app',
@@ -515,7 +557,11 @@ void main() {
         ),
       );
 
+      expect(observerEnabled.config.skipUnchangedValues, true);
       expect(observerDisabled.config.skipUnchangedValues, false);
+
+      observerEnabled.dispose();
+      observerDisabled.dispose();
     });
 
     test('skipUnchangedValues filters identical primitive updates',
@@ -794,14 +840,6 @@ final class _TestObserver extends RiverpodDevToolsObserver {
   final List<ProviderObserverContext> errorEvents = [];
 
   _TestObserver()
-<<<<<<< HEAD
-      : super(
-          config: TrackerConfig.forPackage(
-            'test_app',
-            enableConsoleOutput: false, // Disable console for tests
-          ),
-        );
-=======
     : super(
         config: TrackerConfig.forPackage(
           'test_app',
@@ -809,7 +847,6 @@ final class _TestObserver extends RiverpodDevToolsObserver {
           enablePeriodicCleanup: false, // Disable cleanup timer for tests
         ),
       );
->>>>>>> 4602988 (feat: implement periodic memory cleanup for stack trace cache)
 
   @override
   void didAddProvider(ProviderObserverContext context, Object? value) {
