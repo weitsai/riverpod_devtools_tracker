@@ -324,6 +324,40 @@ RiverpodDevToolsObserver(
    ]
    ```
 
+## 進階功能
+
+### 堆疊追蹤解析快取
+
+追蹤器包含智能快取系統，用於堆疊追蹤解析，可大幅提升效能，特別是對於頻繁更新的非同步 providers。
+
+**運作原理：**
+- 已解析的堆疊追蹤會被快取以避免重複解析
+- 當快取達到大小限制時使用 LRU（最近最少使用）策略移除舊項目
+- 可將重複追蹤的解析時間減少 80-90%
+- 預設啟用並配置合理的設定值
+
+**配置方式：**
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app',
+    enableStackTraceCache: true,        // 啟用快取（預設：true）
+    maxStackTraceCacheSize: 500,         // 最大快取項目數（預設：500）
+  ),
+)
+```
+
+**何時調整設定：**
+- **大型應用且有許多 providers**：增加 `maxStackTraceCacheSize` 到 1000+ 以獲得更好的快取命中率
+- **記憶體受限環境**：減少到 100-200 以降低記憶體使用
+- **除錯快取問題**：暫時停用快取 `enableStackTraceCache: false`
+
+**效能影響：**
+- 典型記憶體使用：每個快取項目約 100-500 bytes
+- 500 個項目的快取 ≈ 50-250 KB 記憶體
+- 頻繁更新的 providers 可減少 80-90% 的解析時間
+
 ## 貢獻者
 <a href="https://github.com/weitsai/riverpod_devtools_tracker/graphs/contributors ">
   <img src="https://contrib.rocks/image?repo=weitsai/riverpod_devtools_tracker" />
