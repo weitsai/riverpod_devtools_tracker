@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/performance_stats_model.dart';
 
 /// Performance metrics panel for DevTools extension
 class PerformancePanel extends StatelessWidget {
@@ -22,11 +23,24 @@ class PerformancePanel extends StatelessWidget {
       );
     }
 
-    final totalOperations = performanceStats!['totalOperations'] as int? ?? 0;
-    final totalTimeMs = performanceStats!['totalTimeMs'] as double? ?? 0.0;
-    final averageTimeMs = performanceStats!['averageTimeMs'] as double? ?? 0.0;
-    final providerStats =
-        performanceStats!['providerStats'] as List<dynamic>? ?? [];
+    // Parse into type-safe model
+    final stats = PerformanceStatsModel.fromJson(performanceStats!);
+
+    if (stats.isEmpty) {
+      return const Center(
+        child: Text(
+          'No performance data available yet.\n\n'
+          'Trigger some provider updates to see metrics.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final totalOperations = stats.totalOperations;
+    final totalTimeMs = stats.totalTimeMs;
+    final averageTimeMs = stats.averageTimeMs;
+    final providerStats = stats.providerStats;
 
     return Column(
       children: [
@@ -102,8 +116,7 @@ class PerformancePanel extends StatelessWidget {
               : ListView.builder(
                   itemCount: providerStats.length,
                   itemBuilder: (context, index) {
-                    final stats = providerStats[index] as Map<String, dynamic>;
-                    return _buildProviderCard(stats);
+                    return _buildProviderCard(providerStats[index]);
                   },
                 ),
         ),
@@ -136,51 +149,26 @@ class PerformancePanel extends StatelessWidget {
     );
   }
 
-  Widget _buildProviderCard(Map<String, dynamic> stats) {
-    final providerName = stats['providerName'] as String? ?? 'Unknown';
-    final updateCount = stats['updateCount'] as int? ?? 0;
-    final averageTimeMs = stats['averageTimeMs'] as double? ?? 0.0;
-    final maxTimeMs = stats['maxTimeMs'] as double? ?? 0.0;
-    final minTimeMs = stats['minTimeMs'] as double? ?? 0.0;
-    final averageStackTraceMs =
-        stats['averageStackTraceMs'] as double? ?? 0.0;
-    final averageSerializationMs =
-        stats['averageSerializationMs'] as double? ?? 0.0;
-    final totalTimeMs = stats['totalTimeMs'] as double? ?? 0.0;
-
-    // Determine performance level based on average time
-    Color performanceColor;
-    String performanceLabel;
-    if (averageTimeMs < 1.0) {
-      performanceColor = Colors.green;
-      performanceLabel = 'Excellent';
-    } else if (averageTimeMs < 5.0) {
-      performanceColor = Colors.blue;
-      performanceLabel = 'Good';
-    } else if (averageTimeMs < 10.0) {
-      performanceColor = Colors.orange;
-      performanceLabel = 'Fair';
-    } else {
-      performanceColor = Colors.red;
-      performanceLabel = 'Slow';
-    }
+  Widget _buildProviderCard(ProviderPerformanceModel stats) {
+    // Get performance level from the model
+    final level = stats.performanceLevel;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       color: const Color(0xFF1E1E1E),
       child: ExpansionTile(
-        leading: Icon(Icons.analytics, color: performanceColor),
+        leading: Icon(Icons.analytics, color: level.color),
         title: Text(
-          providerName,
+          stats.providerName,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          '$performanceLabel - $updateCount updates, ${averageTimeMs.toStringAsFixed(3)} ms avg',
+          '${level.label} - ${stats.updateCount} updates, ${stats.averageTimeMs.toStringAsFixed(3)} ms avg',
           style: TextStyle(
-            color: performanceColor.withValues(alpha: 0.7),
+            color: level.color.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -189,20 +177,20 @@ class PerformancePanel extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildDetailRow('Update Count', updateCount.toString()),
+                _buildDetailRow('Update Count', stats.updateCount.toString()),
                 _buildDetailRow('Total Time',
-                    '${totalTimeMs.toStringAsFixed(2)} ms'),
+                    '${stats.totalTimeMs.toStringAsFixed(2)} ms'),
                 _buildDetailRow('Average Time',
-                    '${averageTimeMs.toStringAsFixed(3)} ms'),
+                    '${stats.averageTimeMs.toStringAsFixed(3)} ms'),
                 _buildDetailRow(
-                    'Max Time', '${maxTimeMs.toStringAsFixed(3)} ms'),
+                    'Max Time', '${stats.maxTimeMs.toStringAsFixed(3)} ms'),
                 _buildDetailRow(
-                    'Min Time', '${minTimeMs.toStringAsFixed(3)} ms'),
+                    'Min Time', '${stats.minTimeMs.toStringAsFixed(3)} ms'),
                 const Divider(color: Colors.grey),
                 _buildDetailRow('Avg Stack Trace Parsing',
-                    '${averageStackTraceMs.toStringAsFixed(3)} ms'),
+                    '${stats.averageStackTraceMs.toStringAsFixed(3)} ms'),
                 _buildDetailRow('Avg Value Serialization',
-                    '${averageSerializationMs.toStringAsFixed(3)} ms'),
+                    '${stats.averageSerializationMs.toStringAsFixed(3)} ms'),
               ],
             ),
           ),

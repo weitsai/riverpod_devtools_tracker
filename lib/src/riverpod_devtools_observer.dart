@@ -186,43 +186,32 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     }
 
     // Start performance measurement if enabled
-    final totalStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    totalStopwatch?.start();
+    final tracker = _PerformanceTracker(enabled: config.collectPerformanceMetrics);
+    tracker.startTotal();
 
     // Capture initial stack trace (for async Providers)
-    final stackParseStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    stackParseStopwatch?.start();
-
+    tracker.startStackParse();
     final stackTrace = StackTrace.current;
     final callChain = _parser.parseCallChain(stackTrace);
     final triggerLocation = _parser.findTriggerLocation(stackTrace);
-
-    stackParseStopwatch?.stop();
+    tracker.stopStackParse();
 
     // Save valid stack information for later use when async completes
     _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
 
     // Measure serialization time
-    final serializeStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    serializeStopwatch?.start();
-
+    tracker.startSerialization();
     final serializedValue = _serializeValue(value);
+    tracker.stopSerialization();
 
-    serializeStopwatch?.stop();
-    totalStopwatch?.stop();
+    tracker.stopTotal();
 
-    // Create performance metrics if enabled
-    TrackingMetrics? metrics;
-    if (config.collectPerformanceMetrics && totalStopwatch != null &&
-        stackParseStopwatch != null && serializeStopwatch != null) {
-      final valueSize = serializedValue.toString().length;
-      metrics = TrackingMetrics(
-        stackTraceParsingTime: stackParseStopwatch.elapsed,
-        valueSerializationTime: serializeStopwatch.elapsed,
-        totalTime: totalStopwatch.elapsed,
-        callChainDepth: callChain.length,
-        valueSize: valueSize,
-      );
+    // Create and record performance metrics if enabled
+    final metrics = tracker.createMetrics(
+      callChainDepth: callChain.length,
+      valueSize: serializedValue.toString().length,
+    );
+    if (metrics != null) {
       _performanceStats.recordOperation(providerName, metrics);
     }
 
@@ -262,18 +251,15 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     }
 
     // Start performance measurement if enabled
-    final totalStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    totalStopwatch?.start();
+    final tracker = _PerformanceTracker(enabled: config.collectPerformanceMetrics);
+    tracker.startTotal();
 
     // Capture current stack trace to track change source
-    final stackParseStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    stackParseStopwatch?.start();
-
+    tracker.startStackParse();
     final stackTrace = StackTrace.current;
     var callChain = _parser.parseCallChain(stackTrace);
     var triggerLocation = _parser.findTriggerLocation(stackTrace);
-
-    stackParseStopwatch?.stop();
+    tracker.stopStackParse();
 
     // Check if current stack trace has valid user code (non-provider files)
     final hasUserCode = _hasValidUserCode(callChain);
@@ -291,28 +277,20 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     }
 
     // Measure serialization time
-    final serializeStopwatch = config.collectPerformanceMetrics ? Stopwatch() : null;
-    serializeStopwatch?.start();
-
+    tracker.startSerialization();
     final serializedPreviousValue = _serializeValue(previousValue);
     final serializedCurrentValue = _serializeValue(newValue);
+    tracker.stopSerialization();
 
-    serializeStopwatch?.stop();
-    totalStopwatch?.stop();
+    tracker.stopTotal();
 
-    // Create performance metrics if enabled
-    TrackingMetrics? metrics;
-    if (config.collectPerformanceMetrics && totalStopwatch != null &&
-        stackParseStopwatch != null && serializeStopwatch != null) {
-      final valueSize = serializedCurrentValue.toString().length +
-                        serializedPreviousValue.toString().length;
-      metrics = TrackingMetrics(
-        stackTraceParsingTime: stackParseStopwatch.elapsed,
-        valueSerializationTime: serializeStopwatch.elapsed,
-        totalTime: totalStopwatch.elapsed,
-        callChainDepth: callChain.length,
-        valueSize: valueSize,
-      );
+    // Create and record performance metrics if enabled
+    final metrics = tracker.createMetrics(
+      callChainDepth: callChain.length,
+      valueSize: serializedCurrentValue.toString().length +
+                 serializedPreviousValue.toString().length,
+    );
+    if (metrics != null) {
       _performanceStats.recordOperation(providerName, metrics);
     }
 
@@ -794,4 +772,59 @@ class _ProviderStackTrace {
     required this.callChain,
     required this.timestamp,
   });
+}
+
+/// Helper class for tracking performance metrics
+class _PerformanceTracker {
+  final bool enabled;
+  final Stopwatch? _totalStopwatch;
+  final Stopwatch? _stackParseStopwatch;
+  final Stopwatch? _serializeStopwatch;
+
+  _PerformanceTracker({required this.enabled})
+      : _totalStopwatch = enabled ? Stopwatch() : null,
+        _stackParseStopwatch = enabled ? Stopwatch() : null,
+        _serializeStopwatch = enabled ? Stopwatch() : null;
+
+  /// Start total timing
+  void startTotal() => _totalStopwatch?.start();
+
+  /// Start stack parse timing
+  void startStackParse() => _stackParseStopwatch?.start();
+
+  /// Stop stack parse timing
+  void stopStackParse() => _stackParseStopwatch?.stop();
+
+  /// Start serialization timing
+  void startSerialization() => _serializeStopwatch?.start();
+
+  /// Stop serialization timing
+  void stopSerialization() => _serializeStopwatch?.stop();
+
+  /// Stop total timing
+  void stopTotal() => _totalStopwatch?.stop();
+
+  /// Create tracking metrics from recorded times
+  TrackingMetrics? createMetrics({
+    required int callChainDepth,
+    required int valueSize,
+  }) {
+    if (!enabled) return null;
+
+    final total = _totalStopwatch;
+    final stackParse = _stackParseStopwatch;
+    final serialize = _serializeStopwatch;
+
+    if (total == null || stackParse == null || serialize == null) {
+      return null;
+    }
+
+    return TrackingMetrics(
+      stackTraceParsingTime: stackParse.elapsed,
+      valueSerializationTime: serialize.elapsed,
+      totalTime: total.elapsed,
+      callChainDepth: callChainDepth,
+      valueSize: valueSize,
+    );
+  }
 }
