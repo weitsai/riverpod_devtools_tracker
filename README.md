@@ -389,10 +389,14 @@ The extension includes a powerful timeline visualization to help you understand 
   - 🔴 Red: Provider error (ERROR)
 - **Provider Lanes** - Each provider gets its own horizontal lane for easy tracking
 - **Interactive Controls**:
-  - 🔍 Zoom In/Out - Magnify specific time periods
+  - 🔍 Zoom In/Out - Magnify specific time periods (properly affects timeline scale)
   - ↔️ Pan - Drag horizontally to navigate through time
   - 🔄 Reset - Return to default view
 - **Event Selection** - Click any event to view details in the side panel
+- **Hover Interactions** - Move your mouse over event points to:
+  - 🎯 See a connecting line from the event to its provider label
+  - 💡 Highlight and enlarge the provider name (turns indigo blue with larger font)
+  - ✨ Display a glow effect around the event point
 - **Time Labels** - Precise timestamps shown below the timeline
 
 **Use Cases:**
@@ -405,9 +409,11 @@ The extension includes a powerful timeline visualization to help you understand 
 **Tips:**
 
 - Use zoom to focus on a specific time window
+- Hover over event points to quickly identify which provider they belong to
 - Look for clusters of events that might indicate performance issues
 - Different provider lanes make it easy to track individual provider behavior
 - Combine with filters to focus on specific providers or change types
+- The timeline shows the top 10 most active providers when many providers exist
 
 ### Tips for Using the Extension
 
