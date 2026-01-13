@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -36,21 +37,24 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Stack trace parser
   late final StackTraceParser _parser;
 
+  /// Periodic cleanup timer
+  Timer? _cleanupTimer;
+
+  /// Finalizer to ensure cleanup timer is cancelled when observer is garbage collected
+  static final _finalizer = Finalizer<Timer>((timer) => timer.cancel());
+
   /// Event counter
   int _eventCounter = 0;
 
-  /// 記錄每個 Provider 最近一次有效的觸發堆疊（用於異步 Provider）
-  /// Key: Provider 的名稱
-  /// 這個堆疊會在每次有有效用戶代碼的操作時更新
+  /// Timestamp of last manual cleanup (for throttling)
+  DateTime? _lastManualCleanup;
+
+  /// Records the most recent valid trigger stack trace for each Provider (used for async Providers)
+  /// Key: Provider name
+  /// This stack trace is updated whenever a valid user code operation occurs
   ///
-  /// 注意：為了防止記憶體洩漏，這個 Map 會定期清理舊的記錄
+  /// Note: To prevent memory leaks, this Map is periodically cleaned up
   final Map<String, _ProviderStackTrace> _providerStacks = {};
-
-  /// 堆疊緩存的最大大小（防止記憶體洩漏）
-  static const int _maxStackCacheSize = 100;
-
-  /// 堆疊記錄的過期時間（毫秒）
-  static const int _stackExpirationMs = 60000; // 60 seconds
 
   /// Creates a new Riverpod DevTools Observer
   ///
@@ -67,6 +71,96 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
+
+    // Start periodic cleanup timer if enabled
+    if (this.config.enablePeriodicCleanup) {
+      _startCleanupTimer();
+    }
+  }
+
+  /// Start the periodic cleanup timer
+  void _startCleanupTimer() {
+    _cleanupTimer = Timer.periodic(
+      config.cleanupInterval,
+      (_) => _cleanupExpiredStacks(),
+    );
+
+    // Attach finalizer to ensure timer is cancelled if observer is GC'd
+    if (_cleanupTimer != null) {
+      _finalizer.attach(this, _cleanupTimer!, detach: this);
+    }
+  }
+
+  /// Clean up expired stack traces from memory
+  ///
+  /// This method removes stack traces that have expired based on
+  /// [config.stackExpirationDuration]. If the cache still exceeds
+  /// [config.maxStackCacheSize] after removing expired entries,
+  /// the oldest remaining entries are removed.
+  void _cleanupExpiredStacks() {
+    if (_providerStacks.isEmpty) return;
+
+    final now = DateTime.now();
+    final threshold = now.subtract(config.stackExpirationDuration);
+
+    // Remove expired entries
+    _providerStacks.removeWhere((key, value) {
+      return value.timestamp.isBefore(threshold);
+    });
+
+    // If still over limit, remove oldest entries
+    if (_providerStacks.length > config.maxStackCacheSize) {
+      final entriesToRemove =
+          _providerStacks.length - config.maxStackCacheSize;
+      final sortedEntries = _providerStacks.entries.toList()
+        ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
+
+      for (var i = 0; i < entriesToRemove; i++) {
+        _providerStacks.remove(sortedEntries[i].key);
+      }
+    }
+  }
+
+  /// Throttled version of cleanup for manual triggering
+  ///
+  /// This method implements throttling to prevent excessive cleanup operations
+  /// when periodic cleanup is disabled. Manual cleanup only runs if at least
+  /// 5 seconds have passed since the last cleanup.
+  void _cleanupExpiredStacksThrottled() {
+    final now = DateTime.now();
+    const throttleDuration = Duration(seconds: 5);
+
+    // Skip cleanup if last cleanup was less than throttle duration ago
+    if (_lastManualCleanup != null &&
+        now.difference(_lastManualCleanup!) < throttleDuration) {
+      return;
+    }
+
+    _lastManualCleanup = now;
+    _cleanupExpiredStacks();
+  }
+
+  /// Dispose resources used by the observer
+  ///
+  /// Call this method when the observer is no longer needed to prevent
+  /// memory leaks. This will cancel the cleanup timer and clear all
+  /// cached data.
+  ///
+  /// Example:
+  /// ```dart
+  /// final observer = RiverpodDevToolsObserver(...);
+  /// // ... use observer ...
+  /// observer.dispose();
+  /// ```
+  void dispose() {
+    // Detach finalizer before cancelling timer manually
+    if (_cleanupTimer != null) {
+      _finalizer.detach(this);
+    }
+
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    _providerStacks.clear();
   }
 
   @override
@@ -76,17 +170,17 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     final providerName = getProviderName(context);
     final providerType = getProviderType(context);
 
-    // 檢查是否應該追蹤此 provider
+    // Check if this provider should be tracked
     if (!shouldTrackProvider(providerName, providerType)) {
       return;
     }
 
-    // 捕獲初始堆疊（用於異步 Provider）
+    // Capture initial stack trace (for async Providers)
     final stackTrace = StackTrace.current;
     final callChain = _parser.parseCallChain(stackTrace);
     final triggerLocation = _parser.findTriggerLocation(stackTrace);
 
-    // 保存有效的堆疊信息，供後續異步完成時使用
+    // Save valid stack information for later use when async completes
     _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
 
     _postStateChange(
@@ -110,7 +204,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     final providerName = getProviderName(context);
     final providerType = getProviderType(context);
 
-    // 檢查是否應該追蹤此 provider
+    // Check if this provider should be tracked
     if (!shouldTrackProvider(providerName, providerType)) {
       return;
     }
@@ -127,14 +221,14 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     var callChain = _parser.parseCallChain(stackTrace);
     var triggerLocation = _parser.findTriggerLocation(stackTrace);
 
-    // 檢查當前堆疊是否有有效的用戶代碼（非 provider 文件）
+    // Check if current stack trace has valid user code (non-provider files)
     final hasUserCode = _hasValidUserCode(callChain);
 
     if (hasUserCode) {
-      // 當前堆疊有有效的用戶代碼，保存它供後續異步完成時使用
+      // Current stack has valid user code, save it for later async completion
       _saveStackIfValid(providerName, stackTrace, triggerLocation, callChain);
     } else {
-      // 當前堆疊沒有用戶代碼（異步完成的情況），嘗試使用保存的堆疊
+      // Current stack has no user code (async completion case), try using saved stack
       final savedStack = _providerStacks[providerName];
       if (savedStack != null) {
         callChain = savedStack.callChain;
@@ -160,13 +254,14 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     final providerName = getProviderName(context);
     final providerType = getProviderType(context);
 
-    // 檢查是否應該追蹤此 provider
+    // Check if this provider should be tracked
     if (!shouldTrackProvider(providerName, providerType)) {
       return;
     }
 
-    // 注意：不在這裡清理堆疊，因為 provider 可能被 invalidate 後立即重新創建
-    // 堆疊會在下一次 add 或有效 update 時自動更新
+    // Note: Stack cleanup is not performed here because the provider might be
+    // immediately recreated after invalidation. The stack will be automatically
+    // updated on the next add or valid update operation
 
     _postStateChange(
       providerName: providerName,
@@ -186,7 +281,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     final providerName = getProviderName(context);
     final providerType = getProviderType(context);
 
-    // 檢查是否應該追蹤此 provider
+    // Check if this provider should be tracked
     if (!shouldTrackProvider(providerName, providerType)) {
       return;
     }
@@ -259,37 +354,37 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         file.endsWith('.g.dart');
   }
 
-  /// 檢查 call chain 是否包含有效的用戶代碼（非 provider 文件）
+  /// Check if call chain contains valid user code (non-provider files)
   bool _hasValidUserCode(List<LocationInfo> callChain) {
     if (callChain.isEmpty) return false;
-    // 檢查是否至少有一個不是 provider 文件的位置
+    // Check if at least one location is not a provider file
     return callChain.any((loc) => !_isProviderFile(loc.file));
   }
 
-  /// 檢查是否應該追蹤此 provider
+  /// Check if this provider should be tracked
   ///
-  /// 過濾邏輯順序：
-  /// 1. 檢查白名單 [trackedProviders] - 如果白名單不為空，只追蹤白名單中的（優先級最高）
-  /// 2. 檢查黑名單 [ignoredProviders] - 如果在黑名單中則不追蹤
-  /// 3. 應用自定義過濾函數 [providerFilter] - 如果提供且返回 false 則不追蹤
+  /// Filtering logic order:
+  /// 1. Check whitelist [trackedProviders] - if whitelist is not empty, only track whitelisted (highest priority)
+  /// 2. Check blacklist [ignoredProviders] - if in blacklist then don't track
+  /// 3. Apply custom filter function [providerFilter] - if provided and returns false then don't track
   ///
   /// Returns true if the provider should be tracked
   @protected
   bool shouldTrackProvider(String providerName, String providerType) {
-    // 1. 檢查白名單（如果白名單不為空，只追蹤白名單中的，忽略黑名單）
+    // 1. Check whitelist (if whitelist is not empty, only track whitelisted, ignore blacklist)
     if (config.trackedProviders.isNotEmpty) {
       if (!config.trackedProviders.contains(providerName)) {
         return false;
       }
-      // 在白名單中，繼續檢查自定義過濾函數
+      // In whitelist, continue to check custom filter function
     } else {
-      // 2. 白名單為空時，檢查黑名單
+      // 2. When whitelist is empty, check blacklist
       if (config.ignoredProviders.contains(providerName)) {
         return false;
       }
     }
 
-    // 3. 應用自定義過濾函數
+    // 3. Apply custom filter function
     if (config.providerFilter != null) {
       return config.providerFilter!(providerName, providerType);
     }
@@ -297,14 +392,14 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
     return true;
   }
 
-  /// 保存有效的堆疊信息
+  /// Save valid stack trace information
   void _saveStackIfValid(
     String providerName,
     StackTrace stackTrace,
     LocationInfo? triggerLocation,
     List<LocationInfo> callChain,
   ) {
-    // 只有當堆疊包含有效的用戶代碼時才保存
+    // Only save when stack contains valid user code
     if (_hasValidUserCode(callChain) ||
         (triggerLocation != null && !_isProviderFile(triggerLocation.file))) {
       _providerStacks[providerName] = _ProviderStackTrace(
@@ -314,31 +409,10 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
         timestamp: DateTime.now(),
       );
 
-      // 清理過期的堆疊記錄以防止記憶體洩漏
-      _cleanupExpiredStacks();
-    }
-  }
-
-  /// 清理過期的堆疊記錄
-  void _cleanupExpiredStacks() {
-    // 如果緩存大小超過限制，清理所有過期記錄
-    if (_providerStacks.length > _maxStackCacheSize) {
-      final now = DateTime.now();
-      _providerStacks.removeWhere((key, value) {
-        final age = now.difference(value.timestamp).inMilliseconds;
-        return age > _stackExpirationMs;
-      });
-
-      // 如果清理後還是超過限制，移除最舊的記錄
-      if (_providerStacks.length > _maxStackCacheSize) {
-        final entries =
-            _providerStacks.entries.toList()
-              ..sort((a, b) => a.value.timestamp.compareTo(b.value.timestamp));
-
-        final toRemove = _providerStacks.length - _maxStackCacheSize;
-        for (var i = 0; i < toRemove; i++) {
-          _providerStacks.remove(entries[i].key);
-        }
+      // Manual cleanup is no longer needed here - periodic timer handles it
+      // Only trigger manual cleanup if periodic cleanup is disabled
+      if (!config.enablePeriodicCleanup) {
+        _cleanupExpiredStacksThrottled();
       }
     }
   }
@@ -611,7 +685,7 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   }
 }
 
-/// 記錄 Provider 的觸發堆疊信息
+/// Records trigger stack trace information for a Provider
 class _ProviderStackTrace {
   final StackTrace stackTrace;
   final LocationInfo? triggerLocation;

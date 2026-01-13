@@ -229,8 +229,63 @@ RiverpodDevToolsObserver(
       'generated.dart',
       '.g.dart',
     ],
+    // 記憶體管理設定
+    enablePeriodicCleanup: true,                        // 啟用自動清理
+    cleanupInterval: const Duration(seconds: 30),       // 清理頻率
+    stackExpirationDuration: const Duration(seconds: 60), // 保留堆疊的時間
+    maxStackCacheSize: 100,                             // 最大快取堆疊數
   ),
 )
+```
+
+### 記憶體管理
+
+追蹤器會自動管理記憶體，防止長時間除錯時發生記憶體洩漏：
+
+- **定期清理**：自動從記憶體中移除過期的堆疊追蹤
+- **可設定保留期限**：控制堆疊追蹤保留多久
+- **大小限制**：快取堆疊追蹤數量的硬性上限
+
+預設設定適用於大多數應用，但你可以自訂：
+
+```dart
+TrackerConfig.forPackage(
+  'your_app',
+  enablePeriodicCleanup: true,            // 啟用/停用自動清理
+  cleanupInterval: Duration(seconds: 30),  // 多久執行一次清理
+  stackExpirationDuration: Duration(minutes: 2), // 堆疊追蹤的生命週期
+  maxStackCacheSize: 200,                  // 最多快取的堆疊數量
+)
+```
+
+**何時需要調整**：
+- **高流量應用**：增加 `cleanupInterval` 以降低 CPU 使用率
+- **長時間除錯**：增加 `stackExpirationDuration` 以保留更多歷史記錄
+- **記憶體受限的裝置**：降低 `maxStackCacheSize` 以減少記憶體佔用
+
+**記憶體使用估算**：
+
+追蹤器的記憶體佔用取決於你的配置：
+- **預設配置**（`maxStackCacheSize: 100`）：約 50-100 KB
+  - 每個堆疊追蹤條目：約 500-1000 bytes
+  - 100 個條目 ≈ 50-100 KB
+- **高流量配置**（`maxStackCacheSize: 200`）：約 100-200 KB
+- **記憶體受限配置**（`maxStackCacheSize: 50`）：約 25-50 KB
+
+`enablePeriodicCleanup: true`（預設）確保記憶體使用量保持在這些範圍內，每 30 秒移除過期條目。
+
+**資源清理**：
+如果你手動管理 observer 生命週期，完成時請呼叫 `dispose()`：
+
+```dart
+final observer = RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage('your_app'),
+);
+
+// ... 使用 observer ...
+
+// 完成時（例如測試的 teardown）
+observer.dispose();
 ```
 
 ## 控制台輸出

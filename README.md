@@ -232,6 +232,11 @@ RiverpodDevToolsObserver(
       'generated.dart',
       '.g.dart',
     ],
+    // Memory management settings
+    enablePeriodicCleanup: true,                        // Enable automatic cleanup
+    cleanupInterval: const Duration(seconds: 30),       // Cleanup frequency
+    stackExpirationDuration: const Duration(seconds: 60), // How long to keep stacks
+    maxStackCacheSize: 100,                             // Maximum cached stacks
   ),
 )
 ```
@@ -273,6 +278,55 @@ RiverpodDevToolsObserver(
 2. If `trackedProviders` is empty, providers in `ignoredProviders` are filtered out
 3. After whitelist/blacklist filtering, `providerFilter` function is applied if provided
 4. The `skipUnchangedValues` option (enabled by default) prevents tracking updates where the value hasn't actually changed
+### Memory Management
+
+The tracker automatically manages memory to prevent leaks during long debugging sessions:
+
+- **Periodic Cleanup**: Automatically removes expired stack traces from memory
+- **Configurable Retention**: Control how long stack traces are kept
+- **Size Limits**: Hard limit on the number of cached stack traces
+
+Default settings work well for most apps, but you can customize them:
+
+```dart
+TrackerConfig.forPackage(
+  'your_app',
+  enablePeriodicCleanup: true,            // Enable/disable automatic cleanup
+  cleanupInterval: Duration(seconds: 30),  // How often to run cleanup
+  stackExpirationDuration: Duration(minutes: 2), // Stack trace lifetime
+  maxStackCacheSize: 200,                  // Max number of stacks to cache
+)
+```
+
+**When to Adjust**:
+- **High-traffic apps**: Increase `cleanupInterval` to reduce CPU usage
+- **Long debugging sessions**: Increase `stackExpirationDuration` to keep more history
+- **Memory-constrained devices**: Decrease `maxStackCacheSize` to reduce memory footprint
+
+**Memory Usage Estimation**:
+
+The tracker's memory footprint depends on your configuration:
+- **Default config** (`maxStackCacheSize: 100`): ~50-100 KB
+  - Each stack trace entry: ~500-1000 bytes
+  - 100 entries ≈ 50-100 KB
+- **High-traffic config** (`maxStackCacheSize: 200`): ~100-200 KB
+- **Memory-constrained config** (`maxStackCacheSize: 50`): ~25-50 KB
+
+The `enablePeriodicCleanup: true` (default) ensures memory usage stays within these bounds by removing expired entries every 30 seconds.
+
+**Resource Cleanup**:
+If you're manually managing observer lifecycle, call `dispose()` when done:
+
+```dart
+final observer = RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage('your_app'),
+);
+
+// ... use observer ...
+
+// When done (e.g., in a test teardown)
+observer.dispose();
+```
 
 ## Console Output
 
