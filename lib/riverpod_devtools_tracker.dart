@@ -26,3 +26,5 @@ export 'src/riverpod_devtools_observer.dart';
 export 'src/tracker_config.dart';
 export 'src/stack_trace_parser.dart' show LocationInfo, StackTraceParser;
 export 'src/performance_metrics.dart';
+export 'src/diff/diff_engine.dart';
+export 'src/diff/value_diff.dart';
