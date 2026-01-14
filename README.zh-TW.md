@@ -336,7 +336,7 @@ RiverpodDevToolsObserver(
 
 ## DevTools 擴展功能
 
-擴展提供完整的除錯介面，包含兩個主要分頁：
+擴展提供完整的除錯介面，包含三個主要分頁：
 
 ### State Inspector 分頁
 - **Provider 列表** - 即時查看所有狀態變化與時間戳記
@@ -357,9 +357,19 @@ RiverpodDevToolsObserver(
 - **效能指標** - 基於追蹤開銷的視覺回饋（優秀/良好/普通/慢）
 - **可展開的詳細資訊** - 點擊任何 provider 查看完整指標
 
+### Graph 分頁
+- **Provider 依賴圖** - 互動式視覺化 provider 關係
+- **時序依賴檢測** - 根據更新時序自動推斷依賴關係
+- **互動式節點** - 點擊 provider 查看其連接
+- **連接強度** - 視覺化顯示 provider 更新的頻率
+- **顏色分類節點** - 不同類型的 provider 使用不同顏色（NotifierProvider、FutureProvider、StreamProvider 等）
+- **類型統計** - 工具列即時顯示每種 provider 類型的數量及顏色指示
+- **縮放與平移** - 完整的互動式檢視器，探索複雜的圖表
+- **網路統計** - 即時顯示各類型 provider 數量和總連接數
+
 ### 共同功能
 - **GitHub 風格暗色主題** - 長時間除錯也不傷眼
-- **分頁導航** - 輕鬆在狀態檢查和效能分析之間切換
+- **分頁導航** - 輕鬆在狀態檢查、效能分析和圖表視圖之間切換
 
 ### Provider 狀態篩選
 
@@ -416,10 +426,39 @@ RiverpodDevToolsObserver(
 - 結合篩選器專注於特定的 provider 或變化類型
 - 當存在許多 provider 時，時間軸會顯示前 10 個最活躍的 provider
 
+### 使用圖表視圖
+
+圖表視圖幫助你了解應用程式中的 provider 關係：
+
+1. **切換到 Graph 分頁**：點擊工具列中的「Graph」分頁
+2. **與應用程式互動**：當你使用應用程式時，圖表會自動填充 providers
+3. **查看類型統計**：
+   - 工具列會顯示每種 provider 類型的數量及其對應的顏色
+   - 快速查看應用程式中 provider 類型的分布（例如「Notifier: 3」、「Future: 2」、「Stream: 1」）
+   - 每個類型標籤使用與圖表中節點相同的顏色
+4. **探索關係**：
+   - 在時間上接近更新的 providers（100ms 內）會顯示為已連接
+   - 點擊節點以高亮其連接
+   - 更強的連接（更頻繁的共同更新）會有更粗的線條
+5. **了解顏色**：
+   - 🔴 紅色：NotifierProvider、AsyncNotifierProvider、StreamNotifierProvider
+   - 🟣 紫色：FutureProvider
+   - 🟢 綠色：StreamProvider
+   - 🟠 橙色：Provider（函數式 providers）
+   - 🔵 淺藍色：StateProvider
+   - 🔷 更淺藍色：StateNotifierProvider
+   - 🟪 淺紫色：ChangeNotifierProvider
+   - ⚪ 灰色：未知/其他 provider 類型
+6. **重設視圖**：使用縮放重設按鈕回到預設視圖
+7. **清除網路**：點擊清除按鈕重新開始
+
+**注意**：圖表顯示的是基於更新時序推斷的依賴關係，而非實際的 Riverpod 依賴圖（無法透過公開 API 存取）。
+
 ### 使用技巧
 
 - **找出狀態 Bug**：查看調用鏈了解狀態為何意外變化
 - **效能除錯**：檢查 provider 是否更新過於頻繁
+- **了解架構**：使用圖表視圖查看 providers 如何互動
 - **程式碼導航**：點擊調用鏈中的檔案路徑跳轉到程式碼（如果你的 IDE 支援）
 - **過濾**：使用 `packagePrefixes` 設定只專注於你應用的程式碼，過濾掉框架雜訊
 
