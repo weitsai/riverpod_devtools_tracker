@@ -20,10 +20,86 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
   final TransformationController _transformationController =
       TransformationController();
 
+  // Store calculated positions for hit testing
+  Map<String, Offset> _nodePositions = {};
+  Map<String, double> _nodeRadii = {};
+  Size _lastSize = Size.zero;
+  int _lastNodeCount = 0;
+
   @override
   void dispose() {
     _transformationController.dispose();
     super.dispose();
+  }
+
+  /// Calculate node positions based on current size
+  void _calculateNodePositions(Size size) {
+    final currentNodeCount = widget.network.nodes.length;
+
+    // Recalculate if size changed or node count changed
+    if (size == _lastSize &&
+        currentNodeCount == _lastNodeCount &&
+        _nodePositions.isNotEmpty) {
+      return;
+    }
+
+    _lastSize = size;
+    _lastNodeCount = currentNodeCount;
+    final nodes = widget.network.nodes;
+    if (nodes.isEmpty) {
+      _nodePositions = {};
+      _nodeRadii = {};
+      return;
+    }
+
+    final positions = <String, Offset>{};
+    final radii = <String, double>{};
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) * 0.35;
+
+    for (var i = 0; i < nodes.length; i++) {
+      final angle = (2 * math.pi * i) / nodes.length;
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+      positions[nodes[i].name] = Offset(x, y);
+
+      // Calculate node radius based on update count
+      const baseRadius = 20.0;
+      radii[nodes[i].name] =
+          baseRadius + (math.log(nodes[i].updateCount + 1) * 3);
+    }
+
+    _nodePositions = positions;
+    _nodeRadii = radii;
+  }
+
+  /// Find which node was tapped at the given local position
+  String? _findNodeAtPosition(Offset localPosition) {
+    // Transform the position based on current InteractiveViewer state
+    final matrix = _transformationController.value;
+    final inverseMatrix = Matrix4.inverted(matrix);
+    final transformedPosition =
+        MatrixUtils.transformPoint(inverseMatrix, localPosition);
+
+    for (final entry in _nodePositions.entries) {
+      final nodePosition = entry.value;
+      final nodeRadius = _nodeRadii[entry.key] ?? 20.0;
+      final distance = (transformedPosition - nodePosition).distance;
+      if (distance <= nodeRadius) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  void _handleTap(TapUpDetails details) {
+    final tappedNode = _findNodeAtPosition(details.localPosition);
+    if (tappedNode != null) {
+      setState(() {
+        _selectedProvider =
+            _selectedProvider == tappedNode ? null : tappedNode;
+      });
+    }
   }
 
   @override
@@ -65,27 +141,48 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
       children: [
         _buildToolbar(),
         Expanded(
-          child: InteractiveViewer(
-            transformationController: _transformationController,
-            boundaryMargin: const EdgeInsets.all(200),
-            minScale: 0.1,
-            maxScale: 4.0,
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _ProviderGraphPainter(
-                network: widget.network,
-                selectedProvider: _selectedProvider,
-                onNodeTap: (provider) {
-                  setState(() {
-                    _selectedProvider =
-                        _selectedProvider == provider ? null : provider;
-                  });
-                },
+          child: Row(
+            children: [
+              // Left: Graph view
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final size =
+                        Size(constraints.maxWidth, constraints.maxHeight);
+                    _calculateNodePositions(size);
+
+                    return GestureDetector(
+                      onTapUp: _handleTap,
+                      child: InteractiveViewer(
+                        transformationController: _transformationController,
+                        boundaryMargin: const EdgeInsets.all(200),
+                        minScale: 0.1,
+                        maxScale: 4.0,
+                        child: CustomPaint(
+                          size: Size.infinite,
+                          painter: _ProviderGraphPainter(
+                            network: widget.network,
+                            selectedProvider: _selectedProvider,
+                            nodePositions: _nodePositions,
+                            nodeRadii: _nodeRadii,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
+              // Right: Detail panel (when selected)
+              if (_selectedProvider != null) ...[
+                Container(width: 1, color: const Color(0xFF30363D)),
+                SizedBox(
+                  width: 320,
+                  child: _buildDetailPanel(),
+                ),
+              ],
+            ],
           ),
         ),
-        if (_selectedProvider != null) _buildSelectionInfo(),
       ],
     );
   }
@@ -143,6 +240,9 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
               setState(() {
                 widget.network.clear();
                 _selectedProvider = null;
+                _nodePositions = {};
+                _nodeRadii = {};
+                _lastNodeCount = 0;
               });
             },
             tooltip: 'Clear Network',
@@ -186,104 +286,267 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
     );
   }
 
-  Widget _buildSelectionInfo() {
+  Widget _buildDetailPanel() {
     final node = widget.network.nodes.firstWhere(
       (n) => n.name == _selectedProvider,
     );
     final connections = widget.network.getConnectionsFor(_selectedProvider!);
+    final nodeColor = _getNodeColor(node.type);
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161B22),
-        border: Border(
-          top: BorderSide(color: Color(0xFF30363D)),
-        ),
-      ),
+      color: const Color(0xFF161B22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.circle,
-                  color: Color(0xFF6366F1),
-                  size: 16,
-                ),
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Color(0xFF30363D)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: nodeColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Provider Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF8B949E)),
+                  iconSize: 18,
+                  onPressed: () {
+                    setState(() {
+                      _selectedProvider = null;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Provider name
+                  const Text(
+                    'Name',
+                    style: TextStyle(
+                      color: Color(0xFF8B949E),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    node.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Provider type
+                  const Text(
+                    'Type',
+                    style: TextStyle(
+                      color: Color(0xFF8B949E),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: nodeColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: SelectableText(
+                      node.type,
+                      style: TextStyle(
+                        color: nodeColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Update count
+                  const Text(
+                    'Update Count',
+                    style: TextStyle(
+                      color: Color(0xFF8B949E),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${node.updateCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Last update
+                  if (node.lastUpdate != null) ...[
+                    const Text(
+                      'Last Update',
+                      style: TextStyle(
+                        color: Color(0xFF8B949E),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      node.name,
+                      _formatTime(node.lastUpdate!),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                  ],
+                  // Connections
+                  if (connections.isNotEmpty) ...[
                     Text(
-                      '${node.type} • ${node.updateCount} updates',
+                      'Connections (${connections.length})',
                       style: const TextStyle(
                         color: Color(0xFF8B949E),
                         fontSize: 12,
                       ),
                     ),
-                  ],
-                ),
+                    const SizedBox(height: 8),
+                    ...connections.map((conn) {
+                      final otherProvider = conn.fromProvider == _selectedProvider
+                          ? conn.toProvider
+                          : conn.fromProvider;
+                      final otherNode = widget.network.nodes.firstWhere(
+                        (n) => n.name == otherProvider,
+                        orElse: () => ProviderNode(name: otherProvider, type: 'Unknown'),
+                      );
+                      final otherColor = _getNodeColor(otherNode.type);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D1117),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF30363D)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: otherColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: SelectableText(
+                                  otherProvider,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF6366F1)
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${conn.strength}x',
+                                  style: const TextStyle(
+                                    color: Color(0xFF6366F1),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ] else
+                    const Text(
+                      'No connections detected',
+                      style: TextStyle(
+                        color: Color(0xFF8B949E),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF8B949E)),
-                onPressed: () {
-                  setState(() {
-                    _selectedProvider = null;
-                  });
-                },
-              ),
-            ],
+            ),
           ),
-          if (connections.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'Connections:',
-              style: TextStyle(
-                color: Color(0xFF8B949E),
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: connections.map((conn) {
-                final otherProvider =
-                    conn.fromProvider == _selectedProvider
-                        ? conn.toProvider
-                        : conn.fromProvider;
-                return Chip(
-                  label: Text(
-                    '$otherProvider (${conn.strength})',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  backgroundColor: const Color(0xFF0D1117),
-                  side: const BorderSide(color: Color(0xFF30363D)),
-                  labelStyle: const TextStyle(color: Colors.white),
-                );
-              }).toList(),
-            ),
-          ],
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}:'
+        '${time.second.toString().padLeft(2, '0')}.'
+        '${time.millisecond.toString().padLeft(3, '0')}';
+  }
+
+  Color _getNodeColor(String type) {
+    // Match exact types returned by RiverpodDevToolsObserver.getProviderType()
+    switch (type) {
+      case 'StateNotifierProvider':
+        return const Color(0xFFA5D6FF); // Lighter blue
+      case 'ChangeNotifierProvider':
+        return const Color(0xFFB4A7D6); // Light purple
+      case 'AsyncNotifierProvider':
+      case 'StreamNotifierProvider':
+      case 'NotifierProvider':
+        return const Color(0xFFFF7B72); // Red
+      case 'FutureProvider':
+        return const Color(0xFFD2A8FF); // Purple
+      case 'StreamProvider':
+        return const Color(0xFF7EE787); // Green
+      case 'StateProvider':
+        return const Color(0xFF79C0FF); // Light blue
+      case 'Provider':
+        return const Color(0xFFFFA657); // Orange
+      default:
+        return const Color(0xFF8B949E); // Gray for Unknown
+    }
   }
 }
 
@@ -291,54 +554,34 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
 class _ProviderGraphPainter extends CustomPainter {
   final ProviderNetwork network;
   final String? selectedProvider;
-  final Function(String) onNodeTap;
+  final Map<String, Offset> nodePositions;
+  final Map<String, double> nodeRadii;
 
   _ProviderGraphPainter({
     required this.network,
     required this.selectedProvider,
-    required this.onNodeTap,
+    required this.nodePositions,
+    required this.nodeRadii,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final nodes = network.nodes;
-    if (nodes.isEmpty) return;
-
-    // Calculate node positions using force-directed layout
-    final positions = _calculatePositions(nodes, size);
+    if (nodes.isEmpty || nodePositions.isEmpty) return;
 
     // Draw connections first (behind nodes)
-    _drawConnections(canvas, positions);
+    _drawConnections(canvas);
 
     // Draw nodes
-    _drawNodes(canvas, positions);
+    _drawNodes(canvas);
   }
 
-  Map<String, Offset> _calculatePositions(
-    List<ProviderNode> nodes,
-    Size size,
-  ) {
-    // Simple circular layout
-    final positions = <String, Offset>{};
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * 0.35;
-
-    for (var i = 0; i < nodes.length; i++) {
-      final angle = (2 * math.pi * i) / nodes.length;
-      final x = center.dx + radius * math.cos(angle);
-      final y = center.dy + radius * math.sin(angle);
-      positions[nodes[i].name] = Offset(x, y);
-    }
-
-    return positions;
-  }
-
-  void _drawConnections(Canvas canvas, Map<String, Offset> positions) {
+  void _drawConnections(Canvas canvas) {
     final connections = network.connections;
 
     for (final conn in connections) {
-      final from = positions[conn.fromProvider];
-      final to = positions[conn.toProvider];
+      final from = nodePositions[conn.fromProvider];
+      final to = nodePositions[conn.toProvider];
       if (from == null || to == null) continue;
 
       // Determine if this connection should be highlighted
@@ -384,24 +627,19 @@ class _ProviderGraphPainter extends CustomPainter {
     canvas.drawPath(path, paint..style = PaintingStyle.fill);
   }
 
-  void _drawNodes(Canvas canvas, Map<String, Offset> positions) {
+  void _drawNodes(Canvas canvas) {
     final nodes = network.nodes;
 
     for (final node in nodes) {
-      final position = positions[node.name];
+      final position = nodePositions[node.name];
       if (position == null) continue;
 
       final isSelected = node.name == selectedProvider;
-
-      // Node size based on update count
-      final baseRadius = 20.0;
-      final radius = baseRadius + (math.log(node.updateCount + 1) * 3);
+      final radius = nodeRadii[node.name] ?? 20.0;
 
       // Draw node circle
       final paint = Paint()
-        ..color = isSelected
-            ? const Color(0xFF6366F1)
-            : _getNodeColor(node.type)
+        ..color = isSelected ? const Color(0xFF6366F1) : _getNodeColor(node.type)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(position, radius, paint);
@@ -439,18 +677,26 @@ class _ProviderGraphPainter extends CustomPainter {
   }
 
   Color _getNodeColor(String type) {
-    // Color-code by provider type
+    // Match exact types returned by RiverpodDevToolsObserver.getProviderType()
     switch (type) {
-      case 'StateProvider':
-        return const Color(0xFF3FB950);
-      case 'FutureProvider':
-        return const Color(0xFF1F6FEB);
-      case 'StreamProvider':
-        return const Color(0xFF8B5CF6);
+      case 'StateNotifierProvider':
+        return const Color(0xFFA5D6FF); // Lighter blue
+      case 'ChangeNotifierProvider':
+        return const Color(0xFFB4A7D6); // Light purple
+      case 'AsyncNotifierProvider':
+      case 'StreamNotifierProvider':
       case 'NotifierProvider':
-        return const Color(0xFFF85149);
+        return const Color(0xFFFF7B72); // Red
+      case 'FutureProvider':
+        return const Color(0xFFD2A8FF); // Purple
+      case 'StreamProvider':
+        return const Color(0xFF7EE787); // Green
+      case 'StateProvider':
+        return const Color(0xFF79C0FF); // Light blue
+      case 'Provider':
+        return const Color(0xFFFFA657); // Orange
       default:
-        return const Color(0xFF8B949E);
+        return const Color(0xFF8B949E); // Gray for Unknown
     }
   }
 
@@ -462,6 +708,7 @@ class _ProviderGraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ProviderGraphPainter oldDelegate) {
     return oldDelegate.selectedProvider != selectedProvider ||
-        oldDelegate.network != network;
+        oldDelegate.network != network ||
+        oldDelegate.nodePositions != nodePositions;
   }
 }

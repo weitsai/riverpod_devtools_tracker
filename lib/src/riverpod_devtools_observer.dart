@@ -4,6 +4,9 @@ import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meta/meta.dart';
+// Import riverpod internals for accurate type detection with Generator-produced providers
+// ignore: depend_on_referenced_packages, implementation_imports
+import 'package:riverpod/src/internals.dart' as riverpod_internal;
 
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
@@ -385,27 +388,65 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   }
 
   /// Get provider type
+  ///
+  /// Uses `is` type checking for accurate type detection.
+  /// This is especially important for Riverpod Generator generated providers,
+  /// which use internal base classes (e.g., $NotifierProvider, $FutureProvider).
   @protected
   String getProviderType(ProviderObserverContext context) {
-    final typeName = context.provider.runtimeType.toString();
+    final provider = context.provider;
 
-    if (typeName.contains('StateProvider')) {
-      return 'StateProvider';
-    } else if (typeName.contains('StateNotifierProvider')) {
+    // Use type checking for accurate detection
+    // Check order matters: more specific types first
+
+    // Legacy providers (Riverpod 2.x style)
+    if (provider is riverpod_internal.StateNotifierProvider) {
       return 'StateNotifierProvider';
-    } else if (typeName.contains('NotifierProvider')) {
+    }
+    if (provider is riverpod_internal.StateProvider) {
+      return 'StateProvider';
+    }
+
+    // Modern providers (Riverpod 3.x style)
+    // AsyncNotifierProvider (including generator-generated async notifiers)
+    if (provider is riverpod_internal.$AsyncNotifierProvider) {
+      return 'AsyncNotifierProvider';
+    }
+
+    // StreamNotifierProvider
+    if (provider is riverpod_internal.$StreamNotifierProvider) {
+      return 'StreamNotifierProvider';
+    }
+
+    // NotifierProvider (including generator-generated notifiers)
+    if (provider is riverpod_internal.$NotifierProvider) {
       return 'NotifierProvider';
-    } else if (typeName.contains('FutureProvider')) {
-      return 'FutureProvider';
-    } else if (typeName.contains('StreamProvider')) {
+    }
+
+    // StreamProvider (must check before $FutureModifier since StreamProvider also uses it)
+    if (provider is riverpod_internal.StreamProvider) {
       return 'StreamProvider';
-    } else if (typeName.contains('ChangeNotifierProvider')) {
-      return 'ChangeNotifierProvider';
-    } else if (typeName.contains('Provider')) {
+    }
+
+    // FutureProvider (check via $FutureModifier mixin)
+    // This catches remaining providers that use $FutureModifier
+    // ignore: invalid_use_of_internal_member
+    if (provider is riverpod_internal.$FutureModifier) {
+      return 'FutureProvider';
+    }
+
+    // Basic Provider (functional provider without async)
+    if (provider is riverpod_internal.Provider) {
       return 'Provider';
     }
 
-    return 'Unknown';
+    // Fallback: check runtime type string for edge cases
+    final typeName = provider.runtimeType.toString();
+    if (typeName.contains('ChangeNotifierProvider')) {
+      return 'ChangeNotifierProvider';
+    }
+
+    return 'Provider'; // Default to Provider
   }
 
   /// Check if it's a provider file

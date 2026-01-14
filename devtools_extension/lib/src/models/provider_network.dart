@@ -89,21 +89,19 @@ class ProviderNetwork {
 
   void _addOrStrengthenConnection(String from, String to) {
     // Check if connection already exists
-    final existing = _connections.firstWhere(
+    final existingIndex = _connections.indexWhere(
       (conn) => conn.fromProvider == from && conn.toProvider == to,
-      orElse: () {
-        // Create new connection
-        final newConn = ProviderConnection(
-          fromProvider: from,
-          toProvider: to,
-        );
-        _connections.add(newConn);
-        return newConn;
-      },
     );
 
-    if (_connections.contains(existing)) {
-      existing.incrementStrength();
+    if (existingIndex >= 0) {
+      // Strengthen existing connection
+      _connections[existingIndex].incrementStrength();
+    } else {
+      // Create new connection with strength = 1
+      _connections.add(ProviderConnection(
+        fromProvider: from,
+        toProvider: to,
+      ));
     }
   }
 

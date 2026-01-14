@@ -73,11 +73,10 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
   // Performance statistics (from latest event)
   Map<String, dynamic>? _performanceStats;
 
-  // Current tab index (0: State Inspector, 1: Performance)
   // Provider network for dependency graph
   final ProviderNetwork _providerNetwork = ProviderNetwork();
 
-  // Current tab index (0: State Inspector, 1: Graph)
+  // Current tab index (0: State Inspector, 1: Performance, 2: Graph)
   int _currentTabIndex = 0;
 
   @override
