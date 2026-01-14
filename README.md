@@ -377,7 +377,7 @@ When `enableConsoleOutput` is true, you'll see formatted output like this:
 
 ## DevTools Extension Features
 
-The extension provides a comprehensive debugging interface with two main tabs:
+The extension provides a comprehensive debugging interface with three main tabs:
 
 ### State Inspector Tab
 - **Provider List** - Real-time view of all state changes with timestamps
@@ -398,9 +398,19 @@ The extension provides a comprehensive debugging interface with two main tabs:
 - **Performance Indicators** - Visual feedback (Excellent/Good/Fair/Slow) based on tracking overhead
 - **Expandable Details** - Click on any provider to see comprehensive metrics
 
+### Graph View Tab
+- **Provider Dependency Graph** - Interactive visualization of provider relationships
+- **Temporal Dependency Detection** - Automatically infers dependencies based on update timing
+- **Interactive Nodes** - Click on providers to see their connections
+- **Connection Strength** - Visual indication of how frequently providers update together
+- **Color-Coded Nodes** - Different colors for different provider types (NotifierProvider, FutureProvider, StreamProvider, etc.)
+- **Type Statistics** - Real-time count of each provider type with color indicators in the toolbar
+- **Zoom & Pan** - Full interactive viewer for exploring complex graphs
+- **Network Statistics** - Real-time stats showing provider counts by type and total connections
+
 ### Common Features
 - **GitHub-style Dark Theme** - Easy on the eyes during long debugging sessions
-- **Tab Navigation** - Easily switch between state inspection and performance analysis
+- **Tab Navigation** - Seamlessly switch between State Inspector, Performance, and Graph views
 
 ### Provider State Filtering
 
@@ -457,10 +467,39 @@ The extension includes a powerful timeline visualization to help you understand 
 - Combine with filters to focus on specific providers or change types
 - The timeline shows the top 10 most active providers when many providers exist
 
+### Using the Graph View
+
+The Graph View helps you understand provider relationships in your application:
+
+1. **Switch to Graph Tab**: Click the "Graph" tab in the toolbar
+2. **Interact with Your App**: As you use your app, the graph will populate with providers
+3. **View Type Statistics**: 
+   - The toolbar shows a count for each provider type with its corresponding color
+   - Quickly see the distribution of provider types in your app (e.g., "Notifier: 3", "Future: 2", "Stream: 1")
+   - Each type chip uses the same color as its nodes in the graph
+4. **Explore Relationships**:
+   - Providers that update close together in time (within 100ms) are shown as connected
+   - Click on a node to highlight its connections
+   - Stronger connections (more frequent co-updates) have thicker lines
+5. **Understand the Colors**:
+   - 🔴 Red: NotifierProvider, AsyncNotifierProvider, StreamNotifierProvider
+   - 🟣 Purple: FutureProvider
+   - 🟢 Green: StreamProvider
+   - 🟠 Orange: Provider (functional providers)
+   - 🔵 Light Blue: StateProvider
+   - 🔷 Lighter Blue: StateNotifierProvider
+   - 🟪 Light Purple: ChangeNotifierProvider
+   - ⚪ Gray: Unknown/Other provider types
+6. **Reset View**: Use the zoom reset button to return to the default view
+7. **Clear Network**: Click the clear button to start fresh
+
+**Note**: The graph shows *inferred* dependencies based on temporal proximity of updates, not the actual Riverpod dependency graph (which is not accessible through the public API).
+
 ### Tips for Using the Extension
 
 - **Finding State Bugs**: Look at the call chain to understand why a state changed unexpectedly
 - **Performance Debugging**: Check if providers are updating too frequently
+- **Understanding Architecture**: Use the Graph View to see how providers interact
 - **Code Navigation**: Click on file paths in the call chain to jump to the code (if your IDE supports it)
 - **Filtering**: Use the `packagePrefixes` config to focus only on your app's code and filter out framework noise
 
