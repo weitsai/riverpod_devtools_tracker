@@ -129,9 +129,16 @@ class ProviderNetwork {
 
   /// Get network statistics
   Map<String, dynamic> getStatistics() {
+    // Count providers by type
+    final providersByType = <String, int>{};
+    for (final node in _nodes.values) {
+      providersByType[node.type] = (providersByType[node.type] ?? 0) + 1;
+    }
+
     return {
       'totalProviders': _nodes.length,
       'totalConnections': _connections.length,
+      'providersByType': providersByType,
       'averageConnections':
           _connections.isEmpty ? 0.0 : _connections.length / _nodes.length,
       'mostActiveProvider': _getMostActiveProvider(),

@@ -406,41 +406,42 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                 tooltip: 'Toggle Language',
               ),
               const SizedBox(width: 8),
-              SegmentedButton<ViewMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ViewMode.list,
-                    icon: Icon(Icons.list, size: 18),
-                    tooltip: 'List View',
-                  ),
-                  ButtonSegment(
-                    value: ViewMode.timeline,
-                    icon: Icon(Icons.timeline, size: 18),
-                    tooltip: 'Timeline View',
-                  ),
-                ],
-                selected: {_viewMode},
-                onSelectionChanged: (Set<ViewMode> newSelection) {
-                  setState(() => _viewMode = newSelection.first);
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Color(0xFF6366F1).withValues(alpha: 0.3);
-                    }
-                    return const Color(0xFF161B22);
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Color(0xFF6366F1);
-                    }
-                    return const Color(0xFF8B949E);
-                  }),
-                  side: WidgetStateProperty.all(
-                    const BorderSide(color: Color(0xFF30363D)),
+              if (_currentTabIndex == 0)
+                SegmentedButton<ViewMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ViewMode.list,
+                      icon: Icon(Icons.list, size: 18),
+                      tooltip: 'List View',
+                    ),
+                    ButtonSegment(
+                      value: ViewMode.timeline,
+                      icon: Icon(Icons.timeline, size: 18),
+                      tooltip: 'Timeline View',
+                    ),
+                  ],
+                  selected: {_viewMode},
+                  onSelectionChanged: (Set<ViewMode> newSelection) {
+                    setState(() => _viewMode = newSelection.first);
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return const Color(0xFF6366F1).withValues(alpha: 0.3);
+                      }
+                      return const Color(0xFF161B22);
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return const Color(0xFF6366F1);
+                      }
+                      return const Color(0xFF8B949E);
+                    }),
+                    side: WidgetStateProperty.all(
+                      const BorderSide(color: Color(0xFF30363D)),
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.download, color: Color(0xFF8B949E)),

@@ -189,6 +189,7 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
 
   Widget _buildToolbar() {
     final stats = widget.network.getStatistics();
+    final providersByType = stats['providersByType'] as Map<String, int>? ?? {};
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -215,12 +216,18 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
             ),
           ),
           const SizedBox(width: 24),
-          _buildStatChip(
-            'Providers',
-            '${stats['totalProviders']}',
-            Icons.circle,
-          ),
-          const SizedBox(width: 12),
+          // Display provider count by type with colors
+          ...providersByType.entries.map((entry) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _buildTypeStatChip(
+                _getTypeLabel(entry.key),
+                '${entry.value}',
+                _getNodeColor(entry.key),
+              ),
+            );
+          }),
+          if (providersByType.isNotEmpty) const SizedBox(width: 12),
           _buildStatChip(
             'Connections',
             '${stats['totalConnections']}',
@@ -284,6 +291,73 @@ class _ProviderGraphViewState extends State<ProviderGraphView> {
         ],
       ),
     );
+  }
+
+  Widget _buildTypeStatChip(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1117),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF30363D)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF8B949E),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getTypeLabel(String type) {
+    // Convert provider type to short label
+    switch (type) {
+      case 'StateNotifierProvider':
+        return 'StateNotifier';
+      case 'ChangeNotifierProvider':
+        return 'ChangeNotifier';
+      case 'AsyncNotifierProvider':
+        return 'AsyncNotifier';
+      case 'StreamNotifierProvider':
+        return 'StreamNotifier';
+      case 'NotifierProvider':
+        return 'Notifier';
+      case 'FutureProvider':
+        return 'Future';
+      case 'StreamProvider':
+        return 'Stream';
+      case 'StateProvider':
+        return 'State';
+      case 'Provider':
+        return 'Provider';
+      default:
+        return type;
+    }
   }
 
   Widget _buildDetailPanel() {
