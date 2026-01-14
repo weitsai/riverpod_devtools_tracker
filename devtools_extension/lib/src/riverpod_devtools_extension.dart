@@ -170,6 +170,7 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
             data['performanceStats'] as Map<dynamic, dynamic>,
           );
         }
+
         // Update provider network for dependency graph
         _providerNetwork.recordProviderUpdate(
           stateInfo.providerName,
@@ -385,6 +386,11 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
                       icon: Icons.speed,
                       isSelected: _currentTabIndex == 1,
                       onTap: () => setState(() => _currentTabIndex = 1),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: const Color(0xFF30363D),
                     ),
                     _buildTabButton(
                       label: 'Graph',
@@ -691,7 +697,6 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
       return PerformancePanel(performanceStats: _performanceStats);
     }
 
-    // Show state inspector when State Inspector tab is selected
     // Show graph view when Graph tab is selected
     if (_currentTabIndex == 2) {
       return ProviderGraphView(network: _providerNetwork);

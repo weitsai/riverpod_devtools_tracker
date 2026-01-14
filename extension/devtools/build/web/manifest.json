@@ -1,0 +1,13 @@
+{
+    "name": "Riverpod DevTools Extension",
+    "short_name": "RiverpodTracker",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0D1117",
+    "theme_color": "#6366F1",
+    "description": "DevTools extension for monitoring Riverpod state changes"
+}
+
+
+
+
