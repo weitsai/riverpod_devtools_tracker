@@ -145,8 +145,92 @@ class _RiverpodDevToolsExtensionState extends State<RiverpodDevToolsExtension> {
           _isConnected = true;
         });
       }
+
+      // Load persisted events from app
+      await _loadPersistedEvents(service);
     } catch (e) {
       debugPrint('Error during service connection: $e');
+    }
+  }
+
+  /// Load persisted events from the app via service extension
+  Future<void> _loadPersistedEvents(VmService service) async {
+    try {
+      // Get the main isolate
+      final vm = await service.getVM();
+      final isolates = vm.isolates;
+      if (isolates == null || isolates.isEmpty) {
+        debugPrint('No isolates found');
+        return;
+      }
+
+      // Find the main isolate (usually the first one)
+      final mainIsolate = isolates.first;
+      final isolateId = mainIsolate.id;
+      if (isolateId == null) {
+        debugPrint('Isolate ID is null');
+        return;
+      }
+
+      // Call the service extension to get persisted events
+      debugPrint('Calling ext.riverpod_devtools.getPersistedEvents...');
+      final response = await service.callServiceExtension(
+        'ext.riverpod_devtools.getPersistedEvents',
+        isolateId: isolateId,
+        args: {'maxEvents': '500'},
+      );
+
+      final responseJson = response.json;
+      if (responseJson == null) {
+        debugPrint('No JSON response from service extension');
+        return;
+      }
+
+      final enabled = responseJson['enabled'] as bool? ?? false;
+      if (!enabled) {
+        debugPrint('Event persistence is not enabled in the app');
+        return;
+      }
+
+      final eventsJson = responseJson['events'] as List<dynamic>?;
+      if (eventsJson == null || eventsJson.isEmpty) {
+        debugPrint('No persisted events found');
+        return;
+      }
+
+      debugPrint('Loading ${eventsJson.length} persisted events...');
+
+      // Parse and add events to the list
+      final loadedEvents = <ProviderStateInfo>[];
+      for (final eventJson in eventsJson) {
+        try {
+          final event = eventJson as Map<String, dynamic>;
+          final stateInfo = ProviderStateInfo.fromJson(event);
+          loadedEvents.add(stateInfo);
+        } catch (e) {
+          debugPrint('Error parsing persisted event: $e');
+        }
+      }
+
+      if (loadedEvents.isNotEmpty && mounted) {
+        setState(() {
+          // Add events in chronological order (oldest first)
+          // They will be sorted by timestamp in _filteredProviders
+          for (final event in loadedEvents) {
+            // Avoid duplicates based on event ID
+            final exists = _providerStates.any((e) => e.id == event.id);
+            if (!exists) {
+              _providerStates.add(event);
+              _latestStates[event.providerName] = event;
+            }
+          }
+          _invalidateFilterCache();
+        });
+        debugPrint('Loaded ${loadedEvents.length} persisted events successfully');
+      }
+    } catch (e) {
+      // Service extension might not be available (older version of tracker)
+      debugPrint('Failed to load persisted events: $e');
     }
   }
 

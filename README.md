@@ -32,6 +32,7 @@ A powerful Flutter package that automatically tracks Riverpod state changes with
 - 📜 **Call Chain Visualization** - View the complete call stack
 - 🎨 **Beautiful DevTools Extension** - GitHub-style dark theme UI
 - 🔄 **Visual Diff Highlighting** - GitHub-style diff view for state changes
+- 💾 **Event Persistence** - Optionally persist events to local storage for cross-session debugging
 - ⚡ **Zero Configuration** - Just add the observer and you're done
 - 🔧 **Highly Configurable** - Customize what to track and how
 - 🎯 **Selective Provider Tracking** - Whitelist/blacklist specific providers or use custom filters
@@ -208,6 +209,31 @@ RiverpodDevToolsObserver(
   ),
 )
 ```
+
+### Event Persistence Configuration
+
+Enable event persistence to preserve state change history across DevTools reconnections:
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app_name',
+    enablePersistence: true,        // Enable event persistence
+    clearOnStart: true,             // Clear old events on app start (default: true)
+    maxPersistedEvents: 1000,       // Max events to load from storage
+  ),
+)
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enablePersistence` | `bool` | `false` | Enable persistent storage of events |
+| `clearOnStart` | `bool` | `true` | Clear stored events when app starts |
+| `maxPersistedEvents` | `int` | `1000` | Maximum events to load from storage |
+
+**Use Cases:**
+- `clearOnStart: true` (default) - Only see events from current session, cleaner debugging
+- `clearOnStart: false` - Preserve events across app restarts for historical analysis
 
 ### Advanced Configuration
 
@@ -391,6 +417,7 @@ The extension provides a comprehensive debugging interface with three main tabs:
 - **Call Chain** - Complete call stack for tracing the execution path
 - **Search & Filter** - Quickly find specific providers or changes
 - **Event Export** - Export events to JSON or CSV format for offline analysis and sharing
+- **Event History** - When persistence is enabled, automatically loads previous events when DevTools connects
 
 ### Performance Tab
 - **Overall Statistics** - Total operations, total time, and average time across all providers

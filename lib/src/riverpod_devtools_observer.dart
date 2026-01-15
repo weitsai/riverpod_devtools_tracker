@@ -11,6 +11,7 @@ import 'package:riverpod/src/internals.dart' as riverpod_internal;
 import 'tracker_config.dart';
 import 'stack_trace_parser.dart';
 import 'performance_metrics.dart';
+import 'event_persistence.dart';
 
 /// Riverpod DevTools Observer
 ///
@@ -41,11 +42,14 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   /// Stack trace parser
   late final StackTraceParser _parser;
 
-  /// Periodic cleanup timer
+/// Periodic cleanup timer
   Timer? _cleanupTimer;
 
   /// Finalizer to ensure cleanup timer is cancelled when observer is garbage collected
   static final _finalizer = Finalizer<Timer>((timer) => timer.cancel());
+
+  /// Event persistence handler
+  late final EventPersistence? _persistence;
 
   /// Event counter
   int _eventCounter = 0;
@@ -75,13 +79,72 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
   ///   config: TrackerConfig.forPackage('my_app'),
   /// )
   /// ```
+  /// Flag to track if service extension is registered
+  static bool _serviceExtensionRegistered = false;
+
   RiverpodDevToolsObserver({TrackerConfig? config})
     : config = config ?? const TrackerConfig() {
     _parser = StackTraceParser(this.config);
+    _persistence = this.config.enablePersistence
+        ? EventPersistence(clearOnStart: this.config.clearOnStart)
+        : null;
 
     // Start periodic cleanup timer if enabled
     if (this.config.enablePeriodicCleanup) {
       _startCleanupTimer();
+    }
+
+    // Register service extension for DevTools to query persisted events
+    _registerServiceExtension();
+  }
+
+  /// Register service extension to allow DevTools to query persisted events
+  void _registerServiceExtension() {
+    // Only register once to avoid duplicate registration errors
+    if (_serviceExtensionRegistered) return;
+
+    try {
+      developer.registerExtension(
+        'ext.riverpod_devtools.getPersistedEvents',
+        (method, parameters) async {
+          if (_persistence == null) {
+            return developer.ServiceExtensionResponse.result(
+              json.encode({'events': [], 'enabled': false}),
+            );
+          }
+
+          try {
+            final maxEvents =
+                int.tryParse(parameters['maxEvents'] ?? '') ??
+                config.maxPersistedEvents;
+
+            final events = await _persistence.loadRecentEvents(
+              maxEvents: maxEvents,
+            );
+
+            return developer.ServiceExtensionResponse.result(
+              json.encode({
+                'events': events,
+                'enabled': true,
+                'count': events.length,
+              }),
+            );
+          } catch (e) {
+            return developer.ServiceExtensionResponse.error(
+              developer.ServiceExtensionResponse.extensionError,
+              'Failed to load events: $e',
+            );
+          }
+        },
+      );
+      _serviceExtensionRegistered = true;
+    } catch (e) {
+      // Extension might already be registered in a previous instance
+      // This is expected behavior, just log it
+      developer.log(
+        'Service extension registration skipped: $e',
+        name: 'RiverpodDevToolsObserver',
+      );
     }
   }
 
@@ -568,6 +631,9 @@ base class RiverpodDevToolsObserver extends ProviderObserver {
 
       // Send to DevTools using postEvent
       developer.postEvent('riverpod_state_change', eventData);
+
+      // Save to persistent storage if enabled
+      _persistence?.saveEvent(eventData);
 
       // Console output
       if (config.enableConsoleOutput) {
