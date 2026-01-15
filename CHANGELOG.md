@@ -1,3 +1,53 @@
+## 1.0.4
+
+**Release Date**: 2026-01-15
+
+### New Features
+
+* **Event History Local Persistence** (PR #31)
+  - Events are now persisted to local storage using JSON Lines format
+  - History survives DevTools disconnections and app sessions
+  - Automatic file size management (max 10 MB)
+  - DevTools automatically loads historical events on startup
+  - New `clearOnStart` configuration option to control history behavior
+  - New dependency: `path_provider` for cross-platform file access
+
+* **Timeline View** (Issue #5)
+  - New timeline visualization for state change events
+  - Hover interactions for detailed event inspection
+  - Improved provider labels for better readability
+  - Visual timeline representation of provider lifecycles
+
+* **Performance Metrics** (Issue #7)
+  - Real-time performance metrics collection and visualization
+  - Type-safe metrics API with comprehensive testing
+  - Monitor state change frequency and patterns
+
+* **Provider Dependency Graph** (Issue #8)
+  - Interactive visualization of provider dependencies
+  - Provider type statistics with color indicators
+  - Improved provider type detection
+  - Visual representation of provider relationships
+
+* **Visual Diff Highlighting** (Issue #18)
+  - Enhanced diff highlighting for state changes
+  - Easier identification of what changed between states
+
+### DevTools Extension Enhancements
+
+* Rebuilt extension with all new visualization features
+* Improved UI/UX for timeline and graph views
+* Better hover interactions and tooltips
+* Enhanced provider type detection and display
+
+### Documentation
+
+* Updated README with Graph View type statistics feature
+* Synced Chinese README with performance metrics section
+* Enhanced Timeline View documentation
+
+---
+
 ## 1.0.3
 
 **Release Date**: 2026-01-13
