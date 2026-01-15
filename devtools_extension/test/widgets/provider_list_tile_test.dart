@@ -294,8 +294,8 @@ void main() {
 
     testWidgets('expands and collapses long values for update event',
         (tester) async {
-      final longValue1 = 'previous_' + ('x' * 50);
-      final longValue2 = 'current_' + ('y' * 50);
+      final longValue1 = 'previous_${'x' * 50}';
+      final longValue2 = 'current_${'y' * 50}';
       final stateInfo = ProviderStateInfo(
         id: 'test_14',
         providerName: 'longUpdateProvider',

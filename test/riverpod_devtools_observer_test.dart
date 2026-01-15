@@ -121,6 +121,9 @@ void main() {
       );
 
       expect(find.text('Test'), findsOneWidget);
+      
+      // Clean up observers to prevent timer leak
+      observer1.dispose();
     });
   });
 
@@ -884,7 +887,9 @@ final class _TestObserver extends RiverpodDevToolsObserver {
 
 enum _TestEnum {
   first,
+  // ignore: unused_field
   second,
+  // ignore: unused_field
   third,
 }
 

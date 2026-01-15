@@ -860,29 +860,6 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
     return [_DiffRange(leftDiff, currentEnd)];
   }
 
-  List<_DiffRange> _mergeNearbyRanges(
-    List<_DiffRange> ranges, {
-    required int maxDistance,
-  }) {
-    if (ranges.isEmpty) return ranges;
-
-    final merged = <_DiffRange>[];
-    var current = ranges[0];
-
-    for (int i = 1; i < ranges.length; i++) {
-      final next = ranges[i];
-      if (next.start - current.end <= maxDistance) {
-        // Merge ranges
-        current = _DiffRange(current.start, next.end);
-      } else {
-        merged.add(current);
-        current = next;
-      }
-    }
-    merged.add(current);
-
-    return merged;
-  }
 
   /// Parse comma-separated properties, handling nested structures
   List<String> _parseProperties(String props) {
@@ -922,62 +899,6 @@ class _StateDetailPanelState extends State<StateDetailPanel> {
     }
 
     return properties;
-  }
-
-  Widget _buildStackTraceSection() {
-    final hasCallChain = stateInfo.callChain.isNotEmpty;
-    final hasExplicitLocation =
-        stateInfo.location != null || stateInfo.locationFile != null;
-
-    // If no explicit location, call chain already shown above, no need to show again
-    if (!hasExplicitLocation && hasCallChain) {
-      return const SizedBox.shrink();
-    }
-
-    if (!hasCallChain) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.layers, color: Color(0xFF8B949E), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.callChain,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                AppLocalizations.of(context)!.itemsCount(
-                  stateInfo.callChain.length,
-                ),
-                style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D1117),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _buildCallChainList(),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildCallChainList() {

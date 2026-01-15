@@ -11,6 +11,16 @@ final userProvider = Provider<String>((ref) => 'user', name: 'userProvider');
 // Provider without explicit name (will use runtimeType)
 final unnamedProvider = Provider<int>((ref) => 0);
 
+// Test helper to access protected method
+final class TestableObserver extends RiverpodDevToolsObserver {
+  TestableObserver({required super.config});
+
+  // Expose protected method for testing
+  bool testShouldTrackProvider(String providerName, String providerType) {
+    return shouldTrackProvider(providerName, providerType);
+  }
+}
+
 void main() {
   group('TrackerConfig.forPackage with provider references', () {
     test('extracts names from provider references', () {
@@ -71,17 +81,17 @@ void main() {
         ignoredProviders: [debugProvider],
       );
 
-      final observer = RiverpodDevToolsObserver(config: config);
+      final observer = TestableObserver(config: config);
 
       // debugProvider should be ignored
       expect(
-        observer.shouldTrackProvider('debugProvider', 'Provider'),
+        observer.testShouldTrackProvider('debugProvider', 'Provider'),
         false,
       );
 
       // other providers should be tracked
       expect(
-        observer.shouldTrackProvider('counterProvider', 'StateProvider'),
+        observer.testShouldTrackProvider('counterProvider', 'StateProvider'),
         true,
       );
     });
@@ -92,32 +102,32 @@ void main() {
         trackedProviders: [counterProvider],
       );
 
-      final observer = RiverpodDevToolsObserver(config: config);
+      final observer = TestableObserver(config: config);
 
       // counterProvider should be tracked
       expect(
-        observer.shouldTrackProvider('counterProvider', 'StateProvider'),
+        observer.testShouldTrackProvider('counterProvider', 'StateProvider'),
         true,
       );
 
       // other providers should NOT be tracked (whitelist mode)
       expect(
-        observer.shouldTrackProvider('debugProvider', 'Provider'),
+        observer.testShouldTrackProvider('debugProvider', 'Provider'),
         false,
       );
     });
 
     test('observer tracks all providers when no filters set', () {
       final config = TrackerConfig.forPackage('test_app');
-      final observer = RiverpodDevToolsObserver(config: config);
+      final observer = TestableObserver(config: config);
 
       // All providers should be tracked
       expect(
-        observer.shouldTrackProvider('counterProvider', 'StateProvider'),
+        observer.testShouldTrackProvider('counterProvider', 'StateProvider'),
         true,
       );
       expect(
-        observer.shouldTrackProvider('debugProvider', 'Provider'),
+        observer.testShouldTrackProvider('debugProvider', 'Provider'),
         true,
       );
     });

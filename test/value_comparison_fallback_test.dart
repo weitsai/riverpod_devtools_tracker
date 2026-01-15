@@ -240,7 +240,8 @@ class _CircularReference {
 
 /// Class that fails JSON encoding
 class _JsonEncodingFailure {
-  final Function callback = () {}; // Functions can't be JSON serialized
+  // Functions can't be JSON serialized
+  void callback() {}
 
   @override
   String toString() => 'JsonEncodingFailure';

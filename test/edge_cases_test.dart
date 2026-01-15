@@ -351,7 +351,7 @@ More garbage
       });
 
       test('provider value transitions from null to non-null', () async {
-        int? value = null;
+        int? value;
         final provider = FutureProvider<int?>((ref) async => value);
 
         container.read(provider);
@@ -368,7 +368,7 @@ More garbage
       });
 
       test('both previousValue and newValue are null', () async {
-        int? value = null;
+        int? value;
         final provider = FutureProvider<int?>((ref) async => value);
 
         container.read(provider);
