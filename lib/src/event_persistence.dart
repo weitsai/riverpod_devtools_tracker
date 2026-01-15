@@ -20,6 +20,18 @@ class EventPersistence {
   /// File name for storing events
   static const _fileName = 'riverpod_events.jsonl';
 
+  /// Whether to clear events on first save
+  final bool _clearOnStart;
+
+  /// Whether the initial clear has been done
+  bool _hasCleared = false;
+
+  /// Creates an EventPersistence instance.
+  ///
+  /// If [clearOnStart] is true, all existing events will be cleared
+  /// before the first event is saved.
+  EventPersistence({bool clearOnStart = false}) : _clearOnStart = clearOnStart;
+
   /// Save a single event to persistent storage.
   ///
   /// Events are appended to the file as JSON Lines (one JSON per line).
@@ -37,6 +49,14 @@ class EventPersistence {
   Future<void> saveEvent(Map<String, dynamic> event) async {
     try {
       final file = await _getEventFile();
+
+      // Clear on first save if configured
+      if (_clearOnStart && !_hasCleared) {
+        _hasCleared = true;
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
 
       // Check file size and clear if too large
       if (await file.exists()) {

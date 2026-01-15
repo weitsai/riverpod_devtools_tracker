@@ -30,6 +30,7 @@
 - 📍 **程式碼位置偵測** - 精確顯示狀態變化的程式碼來源
 - 📜 **調用鏈視覺化** - 查看完整的調用堆疊
 - 🎨 **美觀的 DevTools 擴展** - GitHub 風格的暗色主題介面
+- 💾 **事件持久化** - 可選擇將事件儲存到本地，支援跨 session 除錯
 - ⚡ **零配置** - 只需加入 observer 即可使用
 - 🔧 **高度可配置** - 自訂追蹤內容和方式
 
@@ -205,6 +206,31 @@ RiverpodDevToolsObserver(
 )
 ```
 
+### 事件持久化設定
+
+啟用事件持久化，讓狀態變化歷史在 DevTools 重新連接後仍然可用：
+
+```dart
+RiverpodDevToolsObserver(
+  config: TrackerConfig.forPackage(
+    'your_app_name',
+    enablePersistence: true,        // 啟用事件持久化
+    clearOnStart: true,             // 應用啟動時清除舊事件（預設：true）
+    maxPersistedEvents: 1000,       // 從儲存載入的最大事件數
+  ),
+)
+```
+
+| 選項 | 類型 | 預設值 | 說明 |
+|------|------|--------|------|
+| `enablePersistence` | `bool` | `false` | 啟用事件持久化儲存 |
+| `clearOnStart` | `bool` | `true` | 應用啟動時清除已儲存的事件 |
+| `maxPersistedEvents` | `int` | `1000` | 從儲存載入的最大事件數量 |
+
+**使用情境：**
+- `clearOnStart: true`（預設）- 只顯示當前 session 的事件，除錯更乾淨
+- `clearOnStart: false` - 保留跨應用重啟的事件，用於歷史分析
+
 ### 進階設定
 
 ```dart
@@ -346,6 +372,7 @@ RiverpodDevToolsObserver(
 - **調用鏈** - 完整的調用堆疊，追蹤執行路徑
 - **搜尋與過濾** - 快速找到特定的 provider 或變化
 - **事件匯出** - 將事件匯出為 JSON 或 CSV 格式，用於離線分析與分享
+- **事件歷史** - 啟用持久化時，DevTools 連接後會自動載入先前的事件
 
 ### Performance 分頁
 - **整體統計** - 所有 providers 的總操作數、總時間和平均時間
