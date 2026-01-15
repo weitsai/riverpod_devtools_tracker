@@ -1,3 +1,36 @@
+## 1.0.5
+
+**Release Date**: 2026-01-16
+
+### Code Quality Improvements
+
+* **Fixed all Flutter analyze warnings**
+  - Fixed deprecated `dart:html` usage with proper ignore annotations
+  - Removed unused local variables and methods
+  - Improved string interpolation usage instead of concatenation
+  - Fixed redundant null initializations
+  - Fixed protected member access in tests with proper test helper class
+  - Added proper ignore annotations for intentionally unused enum fields
+  - Converted function variable assignments to function declarations
+  - Fixed timer leak in observer coexistence test
+
+### Testing & Quality
+
+* **Improved test reliability**
+  - Fixed "multiple observers can coexist" test timer leak
+  - Added proper observer disposal in widget tests
+  - Created `TestableObserver` helper class for testing protected methods
+  - All tests now pass cleanly without warnings
+
+### DevTools Extension
+
+* **Code cleanup**
+  - Removed unused helper methods (`_mergeNearbyRanges`, `_buildStackTraceSection`)
+  - Improved code organization in state detail panel
+  - Cleaner implementation of file download functionality
+
+---
+
 ## 1.0.4
 
 **Release Date**: 2026-01-15
