@@ -1,3 +1,18 @@
+## 1.0.7
+
+**Release Date**: 2026-01-16
+
+### Bug Fixes
+
+* **Fixed dart analyze compatibility issue for pub.dev validation**
+  - Resolved analyzer plugin compilation error caused by riverpod_generator in example directory
+  - Added analyzer exclude rules in `analysis_options.yaml` to exclude `example/**`, `build/**`, and `.dart_tool/**`
+  - Fixes "Failed to compile plugin.dart to an AOT snapshot" error
+  - Ensures smooth pub.dev package validation with `dart analyze`
+  - Main library code (`lib/**`) is still fully analyzed for quality assurance
+
+---
+
 ## 1.0.6
 
 **Release Date**: 2026-01-16
