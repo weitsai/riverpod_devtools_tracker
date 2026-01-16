@@ -542,7 +542,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.0.3"
+    version: "1.0.5"
   riverpod_generator:
     dependency: "direct dev"
     description:
