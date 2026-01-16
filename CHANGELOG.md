@@ -1,3 +1,18 @@
+## 1.0.6
+
+**Release Date**: 2026-01-16
+
+### Compatibility Improvements
+
+* **Adjusted SDK version requirements for better pub.dev compatibility**
+  - Lowered minimum Dart SDK requirement from 3.7.0 to 3.5.0
+  - Lowered minimum Flutter SDK requirement from 3.27.0 to 3.24.0
+  - Resolves pub.dev analysis environment compatibility issues
+  - Fixes "Analysis failed with unexpected output" error during package validation
+  - Maintains full compatibility with Riverpod 3.1.0+ and all existing features
+
+---
+
 ## 1.0.5
 
 **Release Date**: 2026-01-16
