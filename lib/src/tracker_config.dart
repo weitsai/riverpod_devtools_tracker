@@ -353,7 +353,7 @@ class TrackerConfig {
     Duration stackExpirationDuration = const Duration(seconds: 60),
     int maxStackCacheSize = 100,
     bool collectPerformanceMetrics = false,
-    bool enablePersistence = false,
+    bool enablePersistence = true,
     int maxPersistedEvents = 1000,
     bool clearOnStart = true,
     List<String> additionalPackages = const [],
